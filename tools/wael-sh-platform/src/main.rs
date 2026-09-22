@@ -13,12 +13,12 @@ const ALLOW_ORIGIN: &str = "https://wael.sh";
 const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 50;
 
-/// One row as it lives in Postgres — flat, like the table.
+/// One row as it is stored in Postgres, flat like the table itself.
 #[derive(sqlx::FromRow)]
 struct Row {
     id: String,
-    ts: String, // the exact signed string; only ever copied, never parsed
-    r#type: String, // `type` is a Rust keyword; r# uses it as a name anyway
+    ts: String, // the exact signed string, which is only copied and never parsed
+    r#type: String, // `type` is a Rust keyword, and r# allows it to be used as a name
     text: String,
     tags: Vec<String>,
     source_title: Option<String>,
@@ -27,11 +27,11 @@ struct Row {
     media_sha256: Option<String>,
     media_alt: Option<String>,
     sig: Option<String>,
-    edited_at: Option<String>, // exact signed string, like ts; v2 posts only
+    edited_at: Option<String>, // the exact signed string, as with ts; v2 posts only
 }
 
-/// One entry as the locked contract serves it — nested source/media,
-/// absent keys omitted, exactly like feed.json.
+/// One entry as the locked contract serves it, with nested source and media
+/// objects and absent keys omitted, exactly as in feed.json.
 #[derive(Serialize)]
 struct Entry {
     id: String,
@@ -94,9 +94,10 @@ struct Feed {
     entries: Vec<Entry>,
 }
 
-/// Query-string parameters: /api/feed?before=<ts>&limit=<n>. Both optional.
-/// limit arrives as a raw string: garbage coerces to the default (contract
-/// behavior inherited from feed_api.py), it never becomes a 400.
+/// Query-string parameters for /api/feed?before=<ts>&limit=<n>. Both are
+/// optional. limit arrives as a raw string, and an unparseable value falls back
+/// to the default rather than producing a 400. This behavior is inherited from
+/// feed_api.py and is part of the contract.
 #[derive(Deserialize)]
 struct Page {
     before: Option<String>,
@@ -155,8 +156,9 @@ fn ok_headers() -> [(header::HeaderName, &'static str); 3] {
     ]
 }
 
-/// Errors carry the same CORS headers as success — the browser on wael.sh
-/// must be able to see a 503, not have it masked as a CORS failure.
+/// Errors carry the same CORS headers as successful responses, so that a
+/// browser on wael.sh sees a 503 rather than having it masked as a CORS
+/// failure.
 fn err_headers() -> [(header::HeaderName, &'static str); 3] {
     [
         (header::ACCESS_CONTROL_ALLOW_ORIGIN, ALLOW_ORIGIN),
@@ -166,8 +168,9 @@ fn err_headers() -> [(header::HeaderName, &'static str); 3] {
 }
 
 async fn feed(State(pool): State<PgPool>, Query(page): Query<Page>) -> impl IntoResponse {
-    // A NUL byte can't live in a Postgres text value; treat it as bad input
-    // (400) rather than letting the bind fail and surfacing a generic 503.
+    // A Postgres text value cannot contain a NUL byte, so this is treated as
+    // bad input and answered with a 400, rather than letting the bind fail and
+    // surfacing a generic 503.
     if page.before.as_deref().is_some_and(|s| s.contains('\0')) {
         return (
             StatusCode::BAD_REQUEST,

@@ -3,72 +3,56 @@
 
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Resume — Wael Shahadeh</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="/style.css" />
-  <style>
-    body {
-      margin: 0;
-      background: var(--panel, #111216);
-    }
-
-    .wrap {
-      position: fixed;
-      inset: 0;
-      display: grid;
-    }
-
-    .frame {
-      border: 0;
-      width: 100%;
-      height: 100%;
-      background: #111216;
-    }
-
-    .toolbar {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 5;
-      display: flex;
-      gap: 8px;
-    }
-
-    .toolbar a {
-      text-decoration: none;
-    }
-
-    .fallback {
-      display: none;
-      place-self: center;
-      text-align: center;
-      padding: 16px;
-      color: var(--text, #e8e8e8);
-    }
-
-    .no-pdf .fallback {
-      display: block;
-    }
-
-    .no-pdf .frame {
-      display: none;
-    }
-  </style>
+  <meta name="description" content="Resume of Wael Shahadeh, cybersecurity senior at Marist University." />
+  <link rel="canonical" href="https://wael.sh/resume/" />
+  <meta name="theme-color" content="#10161C" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <!-- frame-src 'self' is required, because the PDF below renders in an iframe. -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/assets/fonts.css?v=v8" />
+  <link rel="stylesheet" href="/style.css?v=v8" />
+  <link rel="stylesheet" href="/resume/resume.css?v=v8" />
 </head>
 
-<body>
-  <div class="wrap">
-    <iframe class="frame" src="..\assets\Wael_Shahadeh_Resume.pdf" title="Resume PDF"></iframe>
-    <div class="fallback">
-      <p>Can’t display the PDF inline on this device.</p>
-      <p><a class="btn-primary" href="..\assets\Wael_Shahadeh_Resume.pdf">Open the PDF</a></p>
-    </div>
-  </div>
+<body class="resume-body">
+  <a class="skip-link" href="#doc">Skip to the resume</a>
 
-  <script>
-    const iframe = document.querySelector('.frame');
-    iframe.addEventListener('error', () => document.body.classList.add('no-pdf'));
-  </script>/bt
+  <header class="resume-bar">
+    <a class="resume-back" href="/#/contact">
+      <span class="arr" aria-hidden="true">←</span> wael.sh
+    </a>
+    <h1 class="resume-title">Resume — Wael Shahadeh</h1>
+    <div class="resume-actions">
+      <a class="btn-quiet" href="/assets/Wael_Shahadeh_Resume.pdf" target="_blank" rel="noopener">
+        Open in new tab <span class="arr" aria-hidden="true">↗</span>
+      </a>
+      <a class="btn-quiet" href="/assets/Wael_Shahadeh_Resume.pdf" download>
+        Download <span class="arr" aria-hidden="true">↓</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="resume-main" id="doc" tabindex="-1">
+    <!-- An iframe fires `load` even for an error response, so a JavaScript
+         error handler cannot distinguish a rendered PDF from a failure. The
+         fallback is therefore always present in the markup, as a visible note
+         under the frame. That way no code path can leave a visitor looking at
+         a blank frame with no way forward. -->
+    <iframe class="resume-frame" src="/assets/Wael_Shahadeh_Resume.pdf#view=FitH"
+      title="Resume of Wael Shahadeh (PDF)">
+    </iframe>
+    <p class="resume-note">
+      If the document above does not display, some mobile browsers will not render a PDF inline. You can
+      <a href="/assets/Wael_Shahadeh_Resume.pdf" download>download the PDF</a> instead, or read the same
+      material on <a href="/#/about">the about page</a>.
+    </p>
+  </main>
 </body>
 
 </html>

@@ -1,10 +1,12 @@
-/* waelsocial console — keyboard nav, bulk select, filters.
-   Signature verification is server-side (plain-http console has no secure
-   context for crypto.subtle). External data only ever lands via textContent. */
+/* waelsocial console: keyboard navigation, bulk selection and filtering.
+
+   Signature verification happens server-side, because the console is served
+   over plain HTTP and so has no secure context for crypto.subtle. External
+   data is only ever written through textContent. */
 
 "use strict";
 
-// ── queue: selection, bulk dismiss, filter, expand, keyboard ────────
+// ── queue: selection, bulk dismiss, filtering, expansion and keyboard ──
 (function queueTools() {
   const bulkBar = document.getElementById("bulkBar");
   if (!bulkBar) return;
@@ -64,7 +66,7 @@
   document.querySelectorAll(".cand-sum:not(.full)").forEach((p) =>
     p.addEventListener("click", () => p.classList.toggle("expanded")));
 
-  // keyboard: j/k move, x select, d dismiss, t take
+  // Keyboard shortcuts: j and k move, x selects, d dismisses, t writes a take.
   let cur = -1;
   function focusCard(i) {
     const list = cards();
@@ -92,7 +94,7 @@
   });
 })();
 
-// ── compose: live signed preview via sign-post --dry-run ────────────
+// ── compose: live signed preview, produced by sign-post --dry-run ──────
 (function composePreview() {
   const form = document.querySelector("form[data-preview]");
   const pane = document.getElementById("previewPane");
@@ -109,11 +111,11 @@
     pane.replaceChildren();
     pane.hidden = false;
     if (!d.ok) {
-      pane.append(el("p", "preview-label", "preview"), el("div", "preview-err", d.error));
+      pane.append(el("p", "preview-label", "Preview"), el("div", "preview-err", d.error));
       return;
     }
     const e = d.entry;
-    pane.append(el("p", "preview-label", "preview — nothing written yet"));
+    pane.append(el("p", "preview-label", "Preview. Nothing has been written yet."));
     const card = el("article", "post");
     const head = el("div", "post-head");
     head.append(el("span", "chip type " + e.type, e.type),
@@ -121,7 +123,7 @@
                 el("span", "post-date", e.ts),
                 el("span", "badge " + (d.verified ? "ok" : "bad"),
                    !d.verified ? "✗ signature check failed" :
-                   e.edited_at ? "✓ will publish verified · edited" : "✓ will publish verified"));
+                   e.edited_at ? "✓ will publish as verified, edited" : "✓ will publish as verified"));
     card.append(head, el("p", "post-text", e.text));
     if (e.tags && e.tags.length) {
       const tw = el("div", "post-tags");
@@ -131,7 +133,7 @@
     if (e.source_url) card.append(el("p", "preview-src", "source: " + e.source_url));
     pane.append(card);
     const det = el("details", "canon");
-    det.append(el("summary", "", "canonical string (exactly what gets signed)"),
+    det.append(el("summary", "", "Canonical string, which is exactly what gets signed"),
                el("pre", "", d.canonical));
     pane.append(det);
   }
@@ -161,23 +163,23 @@
   });
 })();
 
-// ── published: archive-then-delete, confirmed by typing the id ──────
+// ── published: archive and delete, confirmed by typing the entry id ────
 (function removeConfirm() {
   document.querySelectorAll(".remove-form").forEach((form) =>
     form.addEventListener("submit", (ev) => {
       const id = form.querySelector("input[name=id]").value;
       const typed = prompt(
         `Remove ${id} from the public feed?\n` +
-        `The row is archived to entries_removed first (append-only), ` +
-        `but it disappears from wael.sh.\n\nType the id to confirm:`);
+        `The row is archived to entries_removed first, which is append-only, ` +
+        `but it will no longer appear on wael.sh.\n\nType the id to confirm:`);
       if (typed !== id) {
         ev.preventDefault();
-        if (typed !== null) alert(`"${typed}" does not match ${id} — not removed.`);
+        if (typed !== null) alert(`"${typed}" does not match ${id}, so nothing was removed.`);
       }
     }));
 })();
 
-// ── g-prefix view switching (all pages) ─────────────────────────────
+// ── view switching with a g prefix, available on all pages ─────────────
 (function viewKeys() {
   let goPrefix = false;
   const routes = { q: "/queue", p: "/published", c: "/compose" };

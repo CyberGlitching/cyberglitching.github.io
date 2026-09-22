@@ -1,24 +1,36 @@
 #!/usr/bin/env python3
-"""waelsocial dashboard — Tailscale-only queue/publish UI. NOT public. NO login.
+"""waelsocial dashboard: a Tailscale-only queue and publish interface. This is
+not public and has no login.
 
-Security model (all structural, none of it convention):
-  * Binds exclusively to CT 102's Tailscale interface address. Reaching this
-    page at all requires being on the Tailnet — the network is the auth.
-  * Runs as `wsdash`, which cannot read the signing key (cannot even traverse
-    /home/claude). Everything that touches feed.json goes through
-    `sudo -u claude sign-post` — one binary, one sudoers line.
-  * Post text travels to sign-post via stdin and argv arrays. There is no
-    shell anywhere in the invocation path, so nothing typed into this UI is
-    ever shell-interpreted.
-  * Cross-site POSTs are refused: any request with an Origin header that
-    doesn't match our own host is rejected (blocks CSRF from random websites
-    against the Tailscale IP), and Host must match the bind address.
+This file has been superseded. tools/waelsocial-console/ is the live console; it
+serves the same purpose on the same port and additionally provides published,
+edit and remove views and a signed preview. This file is kept only as the
+chapter 5 reference implementation. It should not be run alongside the console,
+because both bind port 8081. Delete it once nothing references it.
+
+The security model is structural rather than a matter of convention:
+
+  * It binds only to CT 102's Tailscale interface address, so reaching this page
+    at all requires being on the Tailnet. Network membership is the
+    authentication.
+  * It runs as `wsdash`, which cannot read the signing key and cannot traverse
+    /home/claude. Everything that touches feed.json goes through
+    `sudo -u claude sign-post`, which is one binary covered by one sudoers line.
+  * Post text reaches sign-post through stdin and argv arrays. There is no shell
+    anywhere in the invocation path, so nothing typed into this interface is
+    ever interpreted by a shell.
+  * Cross-site POSTs are refused. A request whose Origin header does not match
+    this host is rejected, which blocks CSRF from other websites aimed at the
+    Tailscale address, and Host must match the bind address.
 """
 
+import fcntl
 import html
 import json
+import os
 import subprocess
 import urllib.parse
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -33,14 +45,14 @@ RELAY_CAP = 2
 
 
 def tailscale_ip() -> str:
-    """The Tailscale interface address — the only address we will bind."""
+    """The Tailscale interface address, which is the only address we bind."""
     out = subprocess.run(["ip", "-j", "addr", "show", "tailscale0"],
                          capture_output=True, text=True, check=True).stdout
     for iface in json.loads(out):
         for a in iface.get("addr_info", []):
             if a.get("family") == "inet":
                 return a["local"]
-    raise RuntimeError("tailscale0 has no IPv4 address — is tailscale up?")
+    raise RuntimeError("tailscale0 has no IPv4 address; check that tailscale is up")
 
 
 def load(path: Path, default):
@@ -50,14 +62,49 @@ def load(path: Path, default):
         return default
 
 
+QUEUE_LOCK = QUEUE_PATH.with_suffix(".json.lock")
+
+
+@contextmanager
+def queue_lock():
+    """Serialize read-modify-write cycles on queue.json, which the ingester and
+    sign-post also mutate."""
+    QUEUE_LOCK.touch(exist_ok=True)
+    try:
+        os.chmod(QUEUE_LOCK, 0o660)
+    except OSError:
+        pass
+    with open(QUEUE_LOCK, "r+", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def safe_url(u) -> str:
+    """Only a plain http or https URL becomes an href. html.escape() prevents
+    HTML injection but will pass a javascript: scheme straight into the
+    link."""
+    u = str(u or "")
+    return u if u.startswith(("https://", "http://")) else ""
+
+
 def save_queue(q: dict) -> None:
-    tmp = QUEUE_PATH.with_suffix(".json.tmp")
+    """queue.json is shared between claude, which runs the ingester and
+    sign-post, and wsdash. The writer must leave it group-writable, or the
+    other side's next write fails with EACCES."""
+    # The temporary name includes the process id. With a fixed name, two
+    # concurrent writers share one scratch file, and the second rename fails
+    # with ENOENT after the first has already moved it away.
+    tmp = QUEUE_PATH.with_suffix(f".json.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(q, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.chmod(tmp, 0o660)
     tmp.replace(QUEUE_PATH)
 
 
 def run_sign_post(args: list[str], stdin_text: str | None = None) -> tuple[bool, str]:
-    """Invoke sign-post through sudo. argv only — no shell, ever."""
+    """Invoke sign-post through sudo, passing argv only and never a shell."""
     try:
         r = subprocess.run(SIGN_POST + args, input=stdin_text, text=True,
                            capture_output=True, timeout=30)
@@ -68,9 +115,9 @@ def run_sign_post(args: list[str], stdin_text: str | None = None) -> tuple[bool,
 
 
 def feed_stats() -> dict:
-    """Live counts from Postgres via the read-only wsdash role. The console
-    never writes the feed — it only reads it — so a failed read degrades to
-    zeros rather than blocking the page."""
+    """Live counts from Postgres, read through the read-only wsdash role. The
+    console only reads the feed and never writes it, so a failed read falls back
+    to zeros rather than blocking the page."""
     cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     stats = {"relays_week": 0, "takes": 0, "relays": 0, "mine": 0}
     try:
@@ -146,7 +193,7 @@ def page(queue: dict, stats: dict, flash: str = "", flash_err: bool = False) -> 
         parts.append(f"<div class='flash{' err' if flash_err else ''}'>{e(flash)}</div>")
 
     parts.append("<div class='card'><form method='post' action='/mine'>"
-                 "<textarea name='text' placeholder='new post — your words, signed' required></textarea>"
+                 "<textarea name='text' placeholder='new post, in your words, signed' required></textarea>"
                  "<input type='text' name='tags' placeholder='tags, comma-separated (optional)' style='margin-top:8px'>"
                  "<div class='row'><button class='primary'>sign &amp; publish</button></div></form></div>")
 
@@ -156,13 +203,19 @@ def page(queue: dict, stats: dict, flash: str = "", flash_err: bool = False) -> 
         parts.append("<p class='empty'>Queue is empty. The ingester runs every 6 hours.</p>")
     for c in cands:
         cve, sev = e(c["cve"]), e(str(c.get("severity", "?")))
+        # A queue URL becomes an href only if it is plain http or https.
+        # html.escape blocks HTML injection but passes a javascript: scheme
+        # straight through.
+        href = safe_url(c["url"])
+        link = (f"<a class='src' href='{e(href)}' target='_blank' rel='noopener'>{e(c['url'])}</a>"
+                if href else f"<span class='src'>{e(c['url'])}</span>")
         parts.append(
             f"<div class='card'><div><span class='cve'>{cve}</span><span class='sev'>{sev}</span> "
             f"<span class='src'>{e(c['source'])} · {e(c['date'])}</span></div>"
             f"<div class='sum'>{e(c['summary'])}</div>"
-            f"<a class='src' href='{e(c['url'])}' target='_blank' rel='noopener'>{e(c['url'])}</a>"
+            f"{link}"
             f"<form method='post' action='/take'><input type='hidden' name='cve' value='{cve}'>"
-            f"<textarea name='text' placeholder='your take — this is the good path' required></textarea>"
+            f"<textarea name='text' placeholder='your take on this advisory' required></textarea>"
             f"<div class='row'><button class='primary'>publish signed take ✓</button></div></form>"
             f"<details><summary>other actions…</summary><div class='row'>"
             f"<form method='post' action='/relay' style='display:inline'>"
@@ -209,8 +262,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self._deny_cross_site():
             return
-        length = min(int(self.headers.get("Content-Length", 0)), 65536)
-        form = urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"))
+        try:
+            length = min(int(self.headers.get("Content-Length") or 0), 65536)
+        except ValueError:
+            self.send_error(400, "bad Content-Length")
+            return
+        form = urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8", "replace"))
         text = form.get("text", [""])[0].strip()
         cve = form.get("cve", [""])[0].strip()
         tags = form.get("tags", [""])[0].strip()
@@ -223,13 +280,14 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/relay":
             ok, out = run_sign_post(["--publish-relay", cve])
         elif self.path == "/discard":
-            q = load(QUEUE_PATH, {"candidates": [], "seen": []})
-            cand = next((c for c in q["candidates"] if c["cve"] == cve), None)
-            if cand:
-                q["candidates"].remove(cand)
-                if cand["cve"] not in q["seen"]:
-                    q["seen"].append(cand["cve"])
-                save_queue(q)
+            with queue_lock():
+                q = load(QUEUE_PATH, {"candidates": [], "seen": []})
+                cand = next((c for c in q["candidates"] if c["cve"] == cve), None)
+                if cand:
+                    q["candidates"].remove(cand)
+                    if cand["cve"] not in q.setdefault("seen", []):
+                        q["seen"].append(cand["cve"])
+                    save_queue(q)
             ok, out = bool(cand), f"discarded {cve}" if cand else f"{cve} not in queue"
         else:
             self.send_error(404)

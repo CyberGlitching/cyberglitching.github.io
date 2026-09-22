@@ -1,4 +1,4 @@
-# feed data and key material never enter this repo (waelsocial hard rule)
+# Feed data and key material must never be committed to this repository.
 feed*.json
 *.pem
 *.key

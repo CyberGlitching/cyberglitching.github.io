@@ -1,0 +1,37 @@
+/* The 404 page, using the site's dark palette. It has no JavaScript and no
+   search box that would not actually search anything. */
+.nf-body{
+  background: var(--deep); color: var(--on-ink);
+  min-height: 100vh; display: flex;
+}
+.nf-main{
+  margin: auto; max-width: var(--shell); width: 100%;
+  padding: 80px var(--gut);
+}
+.nf-title{
+  margin: 0 0 20px; font-family: var(--display);
+  font-size: clamp(40px, 6vw, 76px); line-height: 1;
+  font-weight: 900; letter-spacing: -2.6px; max-width: 14ch;
+}
+.nf-lede{
+  margin: 0 0 44px; font-size: 18.5px; line-height: 1.65;
+  color: var(--on-ink-body); max-width: 50ch; text-wrap: pretty;
+}
+.nf-links{
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  border-top: 1px solid var(--dline);
+}
+/* The label and arrow are kept together. Using space-between across a 240px
+   grid cell leaves the arrow sitting beside the following link's label. */
+.nf-links a{
+  display: flex; align-items: center; gap: 10px;
+  padding: 20px 4px; border-bottom: 1px solid var(--dline);
+  font-family: var(--display); font-size: 16px; font-weight: 600;
+  color: var(--on-ink); transition: padding .15s, color .15s;
+}
+.nf-links a:hover{ color: var(--mint); padding-left: 12px; }
+.nf-links .arr{ font-family: var(--mono); color: var(--mint); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce){
+  .nf-links a{ transition: none; }
+}

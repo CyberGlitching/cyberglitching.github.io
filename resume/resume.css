@@ -1,0 +1,56 @@
+/* Resume viewer, a shell around the PDF. It inherits its tokens from /style.css. */
+
+.resume-body{
+  background: var(--panel);
+  color: var(--on-ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-bar{
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 16px var(--gut);
+  border-bottom: 1px solid var(--dline);
+  background: var(--deep);
+}
+.resume-back{
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--display); font-weight: 700; font-size: 14px;
+  color: var(--mint);
+}
+.resume-back:hover{ color: var(--on-ink); }
+.resume-back .arr{ font-family: var(--mono); }
+.resume-title{
+  margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600;
+  letter-spacing: -.2px; color: var(--on-ink-body);
+}
+.resume-actions{ margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.resume-actions .btn-quiet{
+  color: var(--on-ink); border-color: rgba(245,243,239,.28);
+}
+.resume-actions .btn-quiet:hover{ border-color: var(--mint); color: var(--mint); }
+.resume-actions .arr{ font-family: var(--mono); }
+
+.resume-main{ flex: 1; display: flex; flex-direction: column; }
+.resume-frame{
+  flex: 1; width: 100%; min-height: 70vh;
+  border: 0; background: var(--panel);
+  display: block;
+}
+.resume-note{
+  margin: 0; padding: 14px var(--gut) 20px;
+  border-top: 1px solid var(--dline);
+  font-size: 14.5px; line-height: 1.6; color: var(--on-ink-body);
+}
+.resume-note a{ color: var(--mint); }
+.resume-note a:hover{ color: var(--on-ink); }
+
+@media (max-width: 640px){
+  .resume-bar{ gap: 12px; }
+  .resume-title{ order: 3; flex-basis: 100%; }
+  .resume-actions{ margin-left: 0; }
+  /* iOS Safari renders an inline PDF as a single page that does not scroll, so
+     on small screens the download link below the frame is the usable route. */
+  .resume-frame{ min-height: 58vh; }
+}

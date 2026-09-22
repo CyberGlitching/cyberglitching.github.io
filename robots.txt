@@ -1,0 +1,8 @@
+# wael.sh
+User-agent: *
+Allow: /
+
+# A design-tool export kept for reference. It is not part of the site.
+Disallow: /redesign_template/
+
+Sitemap: https://wael.sh/sitemap.xml

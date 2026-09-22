@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""feed-remove — archive-then-delete a waelsocial feed entry.
+"""feed-remove: archive a waelsocial feed entry and then delete it.
 
-Runs on CT 102 as `claude`, the only DB writer. The console (wsdash) may
-invoke it only through its sudoers line — argv arrays, never a shell — and
-wsdash itself holds zero DB write grants.
+This runs on CT 102 as `claude`, which is the only database writer. The console,
+running as wsdash, can invoke it only through its sudoers line, using argv arrays
+rather than a shell, and wsdash holds no database write grants of its own.
 
-Removal is never destruction: the full row (signature included) is copied
-into `entries_removed` in the same transaction that deletes it from
-`entries`. The archive is append-only *by grant* — the claude role has
-INSERT+SELECT on entries_removed and no UPDATE/DELETE, so not even this
+Removal does not destroy the entry. The full row, including its signature, is
+copied into `entries_removed` in the same transaction that deletes it from
+`entries`. The archive is append-only as a matter of grants: the claude role has
+INSERT and SELECT on entries_removed and no UPDATE or DELETE, so not even this
 tool can un-archive or purge history. The frozen /srv/waelsocial/feed.json
 backup is never touched.
 """
@@ -43,7 +43,7 @@ def cmd_list(cur) -> None:
                    FROM entries_removed ORDER BY removed_at""")
     rows = cur.fetchall()
     if not rows:
-        print("archive is empty — nothing has ever been removed")
+        print("the archive is empty, so nothing has ever been removed")
         return
     for id_, type_, ts, removed_at, reason in rows:
         print(f"{removed_at:%Y-%m-%dT%H:%M:%SZ}  {id_:<18} {type_:<6} "
@@ -70,10 +70,10 @@ def cmd_remove(cur, entry_id: str, reason: str, dry_run: bool) -> bool:
     removed_at = cur.fetchone()[0]
     cur.execute("DELETE FROM entries WHERE id = %s", (entry_id,))
     if cur.rowcount != 1:
-        sys.exit(f"error: delete touched {cur.rowcount} rows — rolled back")
+        sys.exit(f"error: the delete touched {cur.rowcount} rows, so it was rolled back")
     print(f"archived {entry_id} -> entries_removed at "
           f"{removed_at:%Y-%m-%dT%H:%M:%SZ}, deleted from entries")
-    print("frozen /srv/waelsocial/feed.json backup untouched (by design)")
+    print("the frozen /srv/waelsocial/feed.json backup was left untouched, as intended")
     return True
 
 
@@ -82,9 +82,9 @@ def main() -> None:
         prog="feed-remove",
         description="Archive a feed entry into entries_removed, then delete it.")
     p.add_argument("entry_id", nargs="?", help="feed entry id (e.g. m-0006)")
-    p.add_argument("--reason", default="", help="short note stored with the archive row")
+    p.add_argument("--reason", default="", help="a short note stored with the archive row")
     p.add_argument("--dry-run", action="store_true",
-                   help="print the row that would be archived; write nothing")
+                   help="print the row that would be archived, without writing anything")
     p.add_argument("--list", action="store_true", dest="list_archive",
                    help="show the removal archive and exit")
     args = p.parse_args()
@@ -96,7 +96,7 @@ def main() -> None:
             cmd_list(cur)
             return
         if not args.entry_id:
-            p.error("entry_id is required (or use --list)")
+            p.error("entry_id is required, unless you are using --list")
         if cmd_remove(cur, args.entry_id, args.reason, args.dry_run):
             conn.commit()
     finally:

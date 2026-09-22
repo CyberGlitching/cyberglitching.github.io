@@ -13,7 +13,7 @@
 </div>
 
 {% if not kev and not nvd %}
-<p class="empty">Queue is empty. The ingester runs every 6 hours.</p>
+<p class="empty">The queue is empty. The ingester runs every six hours.</p>
 {% endif %}
 
 {% macro card(c, kind) %}
@@ -53,7 +53,7 @@
 {% if kev %}
 <section class="group" data-group="kev">
   <div class="group-head kev">
-    <h2>KEV — known exploited <span class="count">{{ kev|length }}</span></h2>
+    <h2>KEV, known to be exploited <span class="count">{{ kev|length }}</span></h2>
     <button type="button" class="btn link select-group">select all</button>
   </div>
   {% for c in kev %}{{ card(c, 'kev') }}{% endfor %}
@@ -76,7 +76,8 @@
   <button class="btn danger" id="bulkDismiss">Dismiss selected</button>
 </form>
 
-<p class="kbd-help">keys: <kbd>j</kbd>/<kbd>k</kbd> move · <kbd>x</kbd> select · <kbd>d</kbd> dismiss ·
-<kbd>t</kbd> take · <kbd>g</kbd><kbd>q</kbd>/<kbd>g</kbd><kbd>p</kbd>/<kbd>g</kbd><kbd>c</kbd> switch view</p>
+<p class="kbd-help">Keyboard shortcuts: <kbd>j</kbd> and <kbd>k</kbd> move, <kbd>x</kbd> selects,
+<kbd>d</kbd> dismisses, <kbd>t</kbd> writes a take, and <kbd>g</kbd> followed by <kbd>q</kbd>,
+<kbd>p</kbd> or <kbd>c</kbd> switches view.</p>
 
 {% endblock %}

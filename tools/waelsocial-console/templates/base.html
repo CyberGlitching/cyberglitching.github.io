@@ -24,7 +24,7 @@
     <span><b>{{ stats.relays }}</b> relays</span>
     <span class="guardrail-relay {{ 'warn' if relay_left == 0 }}">
       relay budget {{ stats.relays_week }}/{{ relay_cap }} used
-      {%- if relay_left == 0 %} — write a take instead{% endif %}
+      {%- if relay_left == 0 %}, so write a signed take instead{% endif %}
     </span>
   </div>
 

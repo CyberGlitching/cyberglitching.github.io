@@ -3,11 +3,11 @@
 
 <div class="page-bar">
   <h1>Published</h1>
-  <span class="page-hint">live rows from Postgres — the same table wael.sh serves</span>
+  <span class="page-hint">Live rows from Postgres, which is the same table wael.sh serves.</span>
 </div>
 
 {% if not entries %}
-<p class="empty">Nothing published yet.</p>
+<p class="empty">Nothing has been published yet.</p>
 {% endif %}
 
 {% for e in entries %}
@@ -17,8 +17,8 @@
     <span class="post-id">{{ e.id }}</span>
     <span class="post-date">{{ e.ts }}</span>
     {% if e.verify == 'ok' %}<span class="badge ok">✓ verified</span>
-    {% elif e.verify == 'ok-edited' %}<span class="badge ok">✓ verified · edited {{ e.edited_at[:10] }}</span>
-    {% elif e.verify == 'bad' %}<span class="badge bad">✗ SIGNATURE FAILED</span>
+    {% elif e.verify == 'ok-edited' %}<span class="badge ok">✓ verified, edited {{ e.edited_at[:10] }}</span>
+    {% elif e.verify == 'bad' %}<span class="badge bad">✗ signature check failed</span>
     {% elif e.verify == 'relay' %}<span class="badge">unsigned relay</span>
     {% else %}<span class="badge">verify unavailable</span>{% endif %}
   </div>

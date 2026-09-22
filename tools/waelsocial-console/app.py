@@ -1,23 +1,30 @@
 #!/usr/bin/env python3
-"""waelsocial console — Tailnet-only operator dashboard. NOT public. NO login.
+"""waelsocial console: a Tailnet-only operator dashboard. This is not public
+and has no login.
 
-Security model (structural, inherited from the Ch.5 console):
-  * Binds exclusively to CT 102's Tailscale interface address. Reaching this
-    page at all requires being on the Tailnet — the network is the auth.
-  * Runs as `wsdash`: read-only DB role (SELECT on entries + feed_meta),
-    cannot traverse /home/claude. The web process holds no DB write grants.
-  * Publishing goes through `sudo -n -u claude sign-post` with argv arrays
-    and stdin. There is no shell anywhere in the invocation path.
-  * Cross-site POSTs are refused: Host must match the bind address and any
-    Origin header must match our own origin.
-  * All external text (CVE summaries, titles) is rendered through Jinja
-    autoescaping; the client JS only ever assigns via textContent.
+The security model is structural, and is inherited from the chapter 5 console:
+
+  * It binds only to CT 102's Tailscale interface address, so reaching this page
+    at all requires being on the Tailnet. Network membership is the
+    authentication.
+  * It runs as `wsdash`, a read-only database role with SELECT on entries and
+    feed_meta that cannot traverse /home/claude. The web process holds no
+    database write grants.
+  * Publishing goes through `sudo -n -u claude sign-post`, using argv arrays and
+    stdin. There is no shell anywhere in the invocation path.
+  * Cross-site POSTs are refused. Host must match the bind address, and any
+    Origin header must match this origin.
+  * All external text, such as CVE summaries and titles, is rendered through
+    Jinja autoescaping, and the client-side JavaScript only ever assigns through
+    textContent.
 """
 
 import base64
+import fcntl
 import json
 import os
 import subprocess
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -27,7 +34,7 @@ from flask import Flask, abort, redirect, render_template, request, url_for
 
 PORT = int(os.environ.get("CONSOLE_PORT", "8081"))
 QUEUE_PATH = Path("/srv/waelsocial/queue.json")
-DSN = "dbname=waelsocial"  # local socket, peer auth as wsdash (SELECT-only role)
+DSN = "dbname=waelsocial"  # local socket, peer auth as wsdash, a SELECT-only role
 SIGN_POST = ["sudo", "-n", "-u", "claude", "--", "/home/claude/bin/sign-post"]
 FEED_REMOVE = ["sudo", "-n", "-u", "claude", "--", "/home/claude/bin/feed-remove"]
 RELAY_CAP = 2
@@ -36,14 +43,14 @@ app = Flask(__name__)
 
 
 def tailscale_ip() -> str:
-    """The Tailscale interface address — the only address we will bind."""
+    """The Tailscale interface address, which is the only address we bind."""
     out = subprocess.run(["ip", "-j", "addr", "show", "tailscale0"],
                          capture_output=True, text=True, check=True).stdout
     for iface in json.loads(out):
         for a in iface.get("addr_info", []):
             if a.get("family") == "inet":
                 return a["local"]
-    raise RuntimeError("tailscale0 has no IPv4 address — is tailscale up?")
+    raise RuntimeError("tailscale0 has no IPv4 address; check that tailscale is up")
 
 
 BIND_IP = tailscale_ip()
@@ -53,7 +60,7 @@ BIND_IP = tailscale_ip()
 
 def db():
     conn = psycopg2.connect(DSN)
-    conn.set_client_encoding("UTF8")  # never trust the ambient locale with signed bytes
+    conn.set_client_encoding("UTF8")  # do not let the ambient locale affect signed bytes
     conn.set_session(readonly=True)
     return conn
 
@@ -101,8 +108,9 @@ def published_entries() -> list[dict]:
 
 
 def canonical(e: dict) -> bytes:
-    """Byte-identical twin of canonicalize() in waelsocial.js and sign-post.
-    v2 (8 lines, edited: after ts:) iff the entry carries edited_at."""
+    """A byte-identical twin of canonicalize() in waelsocial.js and sign-post.
+    Version 2, which has eight lines with `edited:` after `ts:`, is used if and
+    only if the entry carries edited_at."""
     edited = e.get("edited_at")
     lines = ["waelsocial-v2" if edited else "waelsocial-v1",
              f"id:{e['id']}", f"ts:{e['ts']}"]
@@ -114,10 +122,10 @@ def canonical(e: dict) -> bytes:
 
 
 def verify_entries(entries: list[dict], pubkey: str) -> None:
-    """Server-side Ed25519 check against the pinned pubkey. Public-key math
-    only — the console never holds private key material. (Done here rather
-    than in the browser: crypto.subtle needs a secure context and the
-    console is plain http over Tailscale.)"""
+    """Server-side Ed25519 check against the pinned public key. This is
+    public-key arithmetic only; the console never holds private key material.
+    It is done here rather than in the browser because crypto.subtle requires a
+    secure context, and the console is served over plain HTTP on Tailscale."""
     try:
         pk = Ed25519PublicKey.from_public_bytes(base64.b64decode(pubkey))
     except Exception:
@@ -135,6 +143,28 @@ def verify_entries(entries: list[dict], pubkey: str) -> None:
             e["verify"] = "bad"
 
 
+QUEUE_LOCK = QUEUE_PATH.with_suffix(".json.lock")
+
+
+@contextmanager
+def queue_lock():
+    """Serialize read-modify-write cycles on queue.json across the ingester,
+    sign-post and this console. Each of them loads the file, changes it and
+    renames a new copy over it, so without a lock a dismissal that lands during
+    an ingest run is undone, or the ingest run's additions are lost."""
+    QUEUE_LOCK.touch(exist_ok=True)
+    try:
+        os.chmod(QUEUE_LOCK, 0o660)   # both claude and wsdash take this lock
+    except OSError:
+        pass
+    with open(QUEUE_LOCK, "r+", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def load_queue() -> dict:
     try:
         return json.loads(QUEUE_PATH.read_text(encoding="utf-8"))
@@ -143,11 +173,15 @@ def load_queue() -> dict:
 
 
 def save_queue(q: dict) -> None:
-    """Atomic tmp+rename, group-writable like sign-post's writer: queue.json
-    is shared mutable state between claude (ingest/sign-post) and wsdash
-    (triage), so whoever wrote last must leave it 660 or the other side's
-    next write fails."""
-    tmp = QUEUE_PATH.with_suffix(".json.tmp")
+    """Write to a temporary file and rename it into place, leaving the result
+    group-writable as sign-post's writer does. queue.json is shared mutable
+    state between claude, which runs the ingester and sign-post, and wsdash,
+    which does triage, so whichever process wrote last must leave the mode at
+    660 or the other side's next write fails."""
+    # The temporary name includes the process id. With a fixed name, two
+    # concurrent writers share one scratch file, and the second rename fails
+    # with ENOENT after the first has already moved it away.
+    tmp = QUEUE_PATH.with_suffix(f".json.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(q, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.chmod(tmp, 0o660)
     tmp.replace(QUEUE_PATH)
@@ -161,8 +195,8 @@ def sev_key(c: dict) -> float:
 
 
 def safe_url(u) -> str:
-    """External URLs render as links only if they are plain http(s) —
-    Jinja escaping stops HTML injection but not a javascript: scheme."""
+    """External URLs render as links only if they are plain http or https.
+    Jinja escaping prevents HTML injection but not a javascript: scheme."""
     u = str(u or "")
     return u if u.startswith(("https://", "http://")) else ""
 
@@ -189,7 +223,7 @@ def find_candidate(cve: str):
     return cand
 
 
-# ── privileged tool invocation (argv + stdin only, never a shell) ───
+# ── privileged tool invocation, using argv and stdin only, never a shell ───
 
 def _run_tool(base: list[str], args: list[str], stdin_text: str | None = None,
               full_stdout: bool = False) -> tuple[bool, str]:
@@ -324,9 +358,10 @@ def publish_relay():
 
 @app.post("/preview")
 def preview():
-    """Dry-run the exact publish path (same argv+stdin into sign-post) and
-    return the entry as it would be signed. Nothing is written; the returned
-    signature is verified server-side so the badge is honest, not cosmetic."""
+    """Dry-run the exact publish path, passing the same argv and stdin into
+    sign-post, and return the entry as it would be signed. Nothing is written.
+    The returned signature is verified server-side, so the badge reflects a real
+    check rather than being decorative."""
     text = request.form.get("text", "")
     kind = request.form.get("kind", "mine")
     if not text.strip():
@@ -349,7 +384,13 @@ def preview():
     marker = "entry JSON (not written):"
     if marker not in out:
         return {"ok": False, "error": "unexpected sign-post output"}
-    entry = json.loads(out.split(marker, 1)[1])
+    try:
+        entry = json.loads(out.split(marker, 1)[1])
+    except (ValueError, KeyError) as exc:
+        # A truncated or reshaped dry-run payload is a preview failure rather
+        # than a server error, so the operator sees the reason instead of a
+        # stack trace.
+        return {"ok": False, "error": f"could not parse sign-post output: {exc}"}
     flat = {"id": entry["id"], "ts": entry["ts"], "type": entry["type"],
             "text": entry["text"], "tags": entry.get("tags", []),
             "source_url": (entry.get("source") or {}).get("url"),
@@ -364,9 +405,9 @@ def preview():
 
 @app.post("/edit")
 def edit_entry():
-    """sign-post --edit: text/tags only, re-signed as waelsocial-v2, pre-edit
-    row archived server-side by the claude-owned tool. wsdash still writes
-    nothing itself."""
+    """Runs sign-post --edit, which changes text and tags only, re-signs the
+    entry as waelsocial-v2, and archives the pre-edit row server-side through
+    the claude-owned tool. wsdash still writes nothing itself."""
     entry_id = request.form.get("id", "").strip()
     text = request.form.get("text", "").strip()
     tags = request.form.get("tags", "").strip()
@@ -378,9 +419,10 @@ def edit_entry():
 
 @app.post("/remove")
 def remove_entry():
-    """Archive-then-delete via feed-remove. The console never deletes
-    directly — wsdash has no DB write grants; the claude-owned tool does the
-    transactional archive+delete and the archive table is append-only."""
+    """Archive and then delete through feed-remove. The console never deletes
+    directly, because wsdash has no database write grants. The claude-owned tool
+    performs the archive and delete in one transaction, and the archive table is
+    append-only."""
     entry_id = request.form.get("id", "").strip()
     if not entry_id:
         return done("published_view", "no entry id given", False)
@@ -393,18 +435,19 @@ def queue_dismiss():
     cves = {c.strip().upper() for c in request.form.getlist("cve") if c.strip()}
     if not cves:
         return done("queue_view", "nothing selected", False)
-    q = load_queue()
-    q.setdefault("seen", [])
-    kept, dropped = [], []
-    for c in q.get("candidates", []):
-        if c.get("cve", "").upper() in cves:
-            dropped.append(c["cve"])
-            if c["cve"] not in q["seen"]:
-                q["seen"].append(c["cve"])
-        else:
-            kept.append(c)
-    q["candidates"] = kept
-    save_queue(q)
+    with queue_lock():
+        q = load_queue()
+        q.setdefault("seen", [])
+        kept, dropped = [], []
+        for c in q.get("candidates", []):
+            if c.get("cve", "").upper() in cves:
+                dropped.append(c["cve"])
+                if c["cve"] not in q["seen"]:
+                    q["seen"].append(c["cve"])
+            else:
+                kept.append(c)
+        q["candidates"] = kept
+        save_queue(q)
     n = len(dropped)
     return done("queue_view", f"dismissed {n} candidate{'s' if n != 1 else ''}", n > 0)
 

@@ -3,7 +3,7 @@
 
 <div class="page-bar">
   <h1>Edit {{ e.id }}</h1>
-  <span class="page-hint">text + tags only — re-signed as waelsocial-v2, history archived</span>
+  <span class="page-hint">Text and tags only. The entry is re-signed as waelsocial-v2 and the previous version is archived.</span>
 </div>
 
 <div class="compose-layout">
@@ -13,9 +13,9 @@
       <span class="cve">{{ e.id }}</span>
       <span class="cand-date">posted {{ e.ts }}</span>
     </div>
-    {% if e.edited_at %}<p class="compose-note">already edited {{ e.edited_at }} — this makes a new revision</p>{% endif %}
+    {% if e.edited_at %}<p class="compose-note">This entry was already edited on {{ e.edited_at }}, so saving creates a further revision.</p>{% endif %}
     {% if e.source_url %}<a class="btn link" href="{{ e.source_url }}" target="_blank" rel="noopener">{{ e.source_title or e.source_url }} ↗</a>{% endif %}
-    <p class="compose-note">frozen by the signature: id · original ts · type · source · media</p>
+    <p class="compose-note">Frozen by the signature: the id, the original timestamp, the type, the source and the media.</p>
   </aside>
 
   <div class="compose-form">
@@ -23,7 +23,7 @@
       <input type="hidden" name="id" value="{{ e.id }}">
       <textarea name="text" required autofocus>{{ e.text }}</textarea>
       <input type="text" name="tags" value="{{ e.tags | join(', ') }}" placeholder="tags, comma-separated (empty clears)">
-      <p class="compose-note">pre-edit row (old signature included) is archived to <b>entries_revisions</b> before anything changes</p>
+      <p class="compose-note">The pre-edit row, including its old signature, is archived to <b>entries_revisions</b> before anything changes.</p>
       <div class="row"><button class="btn primary big">Re-sign &amp; publish edit ✓</button></div>
     </form>
   </div>

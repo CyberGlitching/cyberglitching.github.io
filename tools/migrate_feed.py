@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""One-time migration: feed.json -> Postgres, with byte-identical verification.
+"""One-time migration of feed.json into Postgres, with byte-identical
+verification.
 
-Acceptance criterion (Ch.6): for every entry, the canonical waelsocial-v1
-string rebuilt FROM THE DATABASE must equal, byte for byte, the canonical
-string built from the frozen feed.json — and every signature must verify
-against the real pubkey. Any mismatch = abort loudly, change nothing else.
+The acceptance criterion from chapter 6 is that, for every entry, the canonical
+waelsocial-v1 string rebuilt from the database must equal the canonical string
+built from the frozen feed.json byte for byte, and every signature must verify
+against the real public key. Any mismatch aborts the run with a clear message
+and changes nothing further.
 
-feed.json is not modified, moved, or deleted. It is the immutable backup.
+feed.json is not modified, moved or deleted. It remains the immutable backup.
 
-Run on CT 102 as `claude` (peer auth -> writer role):  migrate-feed [--verify-only]
+Run this on CT 102 as `claude`, which peer-authenticates to the writer role:
+
+  migrate-feed [--verify-only]
 """
 
 import base64
@@ -22,11 +26,11 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.exceptions import InvalidSignature
 
 FEED_PATH = Path("/srv/waelsocial/feed.json")
-DSN = "dbname=waelsocial"  # local socket, peer auth: OS user == DB role
+DSN = "dbname=waelsocial"  # local socket with peer auth, so the OS user is the DB role
 
 
 def canonicalize(e: dict) -> bytes:
-    """Must stay byte-identical to sign-post and waelsocial.js."""
+    """This must stay byte-identical to sign-post and waelsocial.js."""
     source = (e.get("source") or {}).get("url") or ""
     media = (e.get("media") or {}).get("sha256") or ""
     return "\n".join([
@@ -41,8 +45,9 @@ def canonicalize(e: dict) -> bytes:
 
 
 def row_to_entry(row: dict) -> dict:
-    """Rebuild the JSON entry shape from a DB row — the exact inverse of
-    migration. ts comes from the TEXT column only; ts_at is never used here."""
+    """Rebuild the JSON entry shape from a database row, which is the exact
+    inverse of the migration. ts is taken from the TEXT column only, and ts_at
+    is never used here."""
     e = {"id": row["id"], "ts": row["ts"], "type": row["type"],
          "text": row["text"], "tags": row["tags"]}
     if row["source_url"] is not None:
@@ -59,7 +64,7 @@ def main() -> None:
     verify_only = "--verify-only" in sys.argv
     feed = json.loads(FEED_PATH.read_text(encoding="utf-8"))
     conn = psycopg2.connect(DSN)
-    conn.set_client_encoding("UTF8")  # never trust the ambient locale with signed bytes
+    conn.set_client_encoding("UTF8")  # do not let the ambient locale affect signed bytes
     cur = conn.cursor()
 
     if not verify_only:
@@ -81,7 +86,8 @@ def main() -> None:
         conn.commit()
         print(f"migrated: {len(feed['entries'])} entries offered to DB")
 
-    # --- verification: DB -> canonical bytes must equal JSON -> canonical bytes
+    # Verification: the canonical bytes derived from the database must equal
+    # the canonical bytes derived from the JSON.
     pub = Ed25519PublicKey.from_public_bytes(base64.b64decode(feed["pubkey"]))
     cur.execute("""SELECT id, ts, type, text, tags, source_title, source_url,
                           media_url, media_sha256, media_alt, sig
@@ -110,12 +116,13 @@ def main() -> None:
                 failed += 1
                 continue
         else:
-            state = "unsigned (relay) — no sig, as designed"
+            state = "unsigned relay, which carries no signature by design"
         print(f"PASS  {e['id']:<20} canonical byte-identical; {state}")
 
     if failed:
-        sys.exit(f"\n{failed} FAILURE(S) — migration NOT accepted. feed.json untouched.")
-    print(f"\nall {len(feed['entries'])} entries byte-identical and verified. "
+        sys.exit(f"\n{failed} failure(s), so the migration is not accepted. "
+                 f"feed.json was left untouched.")
+    print(f"\nall {len(feed['entries'])} entries are byte-identical and verified. "
           f"feed.json remains the immutable backup.")
 
 

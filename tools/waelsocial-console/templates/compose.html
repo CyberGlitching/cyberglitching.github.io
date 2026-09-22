@@ -3,8 +3,8 @@
 
 <div class="page-bar">
   <h1>Compose</h1>
-  {% if cand %}<span class="page-hint">signed take on {{ cand.cve }}</span>
-  {% else %}<span class="page-hint">your words, signed</span>{% endif %}
+  {% if cand %}<span class="page-hint">Signed take on {{ cand.cve }}</span>
+  {% else %}<span class="page-hint">Your own words, signed</span>{% endif %}
 </div>
 
 <div class="compose-layout">
@@ -26,15 +26,15 @@
     {% if cand %}
     <form method="post" action="{{ url_for('publish_take') }}" data-preview="take">
       <input type="hidden" name="cve" value="{{ cand.cve }}">
-      <textarea name="text" placeholder="your take — this is the good path" required autofocus></textarea>
-      <p class="compose-note">signed as <b>take</b> · source + tags come from the candidate</p>
+      <textarea name="text" placeholder="your take on this advisory" required autofocus></textarea>
+      <p class="compose-note">Signed as a <b>take</b>. The source and tags come from the candidate.</p>
       <div class="row"><button class="btn primary big">Publish signed take ✓</button></div>
     </form>
     {% else %}
     <form method="post" action="{{ url_for('publish_mine') }}" data-preview="mine">
-      <textarea name="text" placeholder="new post — your words, signed" required autofocus></textarea>
+      <textarea name="text" placeholder="new post, in your own words, signed" required autofocus></textarea>
       <input type="text" name="tags" placeholder="tags, comma-separated (optional)">
-      <p class="compose-note">signed as <b>mine</b></p>
+      <p class="compose-note">Signed as <b>mine</b>.</p>
       <div class="row"><button class="btn primary big">Sign &amp; publish ✓</button></div>
     </form>
     {% endif %}

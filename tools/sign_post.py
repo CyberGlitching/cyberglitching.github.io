@@ -1,33 +1,35 @@
 #!/usr/bin/env python3
-"""sign-post — author and sign waelsocial-v1 feed entries.
+"""sign-post: author and sign waelsocial-v1 feed entries.
 
-Runs on CT 102, where the private key lives. The key never leaves that box;
-this file is public tooling and contains no secrets.
+This runs on CT 102, where the private key lives. The key never leaves that
+machine. This file is public tooling and contains no secrets.
 
-Two rules are enforced structurally, not by convention:
-  * relay entries cannot be signed (argparse won't accept the type, and
-    sign_entry() raises if one ever reaches it)
-  * an image's SHA-256 can only be computed on re-encoded bytes — EXIF
-    stripped and auto-oriented first. There is no code path that hashes the
-    original file and no flag to skip the strip.
+Two rules are enforced by the structure of the code rather than by convention.
+First, relay entries cannot be signed: argparse will not accept the type, and
+sign_entry() raises if one ever reaches it. Second, an image's SHA-256 can only
+be computed on re-encoded bytes, with EXIF stripped and orientation applied
+first. There is no code path that hashes the original file, and no flag to skip
+the strip.
 
-Canonical signing contract — byte-identical twin of canonicalize() in
-waelsocial.js. waelsocial-v1: seven LF-joined lines. waelsocial-v2 (edit,
-signed off 2026-07-19): eight lines, `edited:<ts>` after `ts:`; a post is
-v2 iff it carries edited_at. ts stays the original publish time and both
-timestamps are under the signature. Only text and tags are editable; the
-pre-edit row (old signature included) is archived to entries_revisions in
-the same transaction. Any further change requires a version bump and
-explicit sign-off.
+The canonical signing contract is a byte-identical twin of canonicalize() in
+waelsocial.js. waelsocial-v1 is seven lines joined with LF. waelsocial-v2, added
+for edits and signed off on 2026-07-19, is eight lines, with `edited:<ts>` after
+`ts:`. A post is v2 if and only if it carries edited_at. ts remains the original
+publish time and both timestamps are covered by the signature. Only text and
+tags can be edited, and the pre-edit row, including its old signature, is
+archived to entries_revisions in the same transaction. Any further change to the
+format requires a version bump and explicit sign-off.
 """
 
 import argparse
 import base64
+import fcntl
 import hashlib
 import io
 import json
 import os
 import sys
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -36,8 +38,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 CONTRACT = "waelsocial-v1"
-CONTRACT_V2 = "waelsocial-v2"  # edited posts only; never used at first publish
-SIGNABLE_TYPES = ("mine", "take")  # relay is deliberately absent
+CONTRACT_V2 = "waelsocial-v2"  # edited posts only, never used at first publish
+SIGNABLE_TYPES = ("mine", "take")  # relay is deliberately not listed here
 ID_PREFIX = {"mine": "m-", "take": "t-"}
 
 KEY_PATH = Path(os.environ.get("WAELSOCIAL_KEY", "~/keys/waelsocial-signing.pem")).expanduser()
@@ -45,7 +47,8 @@ OUTBOX = Path(os.environ.get("WAELSOCIAL_OUTBOX", "~/waelsocial/outbox")).expand
 MEDIA_BASE = os.environ.get("WAELSOCIAL_MEDIA_BASE", "").rstrip("/")
 QUEUE_PATH = Path(os.environ.get("WAELSOCIAL_QUEUE", "/srv/waelsocial/queue.json")).expanduser()
 DSN = os.environ.get("WAELSOCIAL_DSN", "dbname=waelsocial")  # local socket, peer auth
-RELAY_CAP_PER_WEEK = 2  # hard cap, no override: news must not drown authored work
+RELAY_CAP_PER_WEEK = 2  # a hard cap with no override, so relayed news does not
+                        # crowd out authored posts
 
 
 def now_ts() -> str:
@@ -53,8 +56,9 @@ def now_ts() -> str:
 
 
 def canonicalize(entry: dict) -> bytes:
-    """LF-joined lines, no trailing newline, UTF-8 bytes. v1 = 7 lines;
-    v2 (iff the entry carries edited_at) = 8, `edited:` after `ts:`."""
+    """Lines joined with LF, no trailing newline, encoded as UTF-8. Version 1
+    has seven lines. Version 2, used if and only if the entry carries
+    edited_at, has eight, with `edited:` inserted after `ts:`."""
     source = (entry.get("source") or {}).get("url") or ""
     media = (entry.get("media") or {}).get("sha256") or ""
     edited = entry.get("edited_at")
@@ -96,10 +100,11 @@ def sign_entry(entry: dict, key: Ed25519PrivateKey) -> str:
 def process_image(path: Path):
     """The only place a media hash can come from.
 
-    Open -> physically rotate pixels per the EXIF orientation flag ->
-    re-encode into a fresh buffer carrying no metadata -> SHA-256 the clean
-    bytes. Finishes with a self-check that the re-encoded image really has
-    no EXIF; aborts rather than sign a dirty hash.
+    The image is opened, its pixels are physically rotated according to the
+    EXIF orientation flag, and it is re-encoded into a fresh buffer that
+    carries no metadata. The SHA-256 is taken over those clean bytes. The
+    function then checks that the re-encoded image really does carry no EXIF,
+    and aborts rather than sign a hash of an image that still does.
     """
     from PIL import Image, ImageOps
 
@@ -110,7 +115,7 @@ def process_image(path: Path):
         im = ImageOps.exif_transpose(im)
         if fmt == "JPEG" and im.mode not in ("RGB", "L"):
             im = im.convert("RGB")
-        im.info.clear()  # nothing from the source may ride along into save()
+        im.info.clear()  # nothing from the source should carry through to save()
         buf = io.BytesIO()
         save_args = {"quality": 92, "optimize": True} if fmt == "JPEG" else {}
         im.save(buf, format=fmt, exif=b"", **save_args)
@@ -118,7 +123,7 @@ def process_image(path: Path):
     clean = buf.getvalue()
     with Image.open(io.BytesIO(clean)) as check:
         if dict(check.getexif()):
-            sys.exit("error: re-encoded image still carries EXIF — refusing to hash")
+            sys.exit("error: the re-encoded image still carries EXIF, so it will not be hashed")
 
     digest = hashlib.sha256(clean).hexdigest()
     ext = ".jpg" if fmt == "JPEG" else "." + fmt.lower()
@@ -127,7 +132,7 @@ def process_image(path: Path):
 
 def db_conn():
     conn = psycopg2.connect(DSN)
-    conn.set_client_encoding("UTF8")  # never trust the ambient locale with signed bytes
+    conn.set_client_encoding("UTF8")  # do not let the ambient locale affect signed bytes
     return conn
 
 
@@ -135,9 +140,9 @@ def check_pubkey(cur, key: Ed25519PrivateKey) -> None:
     cur.execute("SELECT pubkey FROM feed_meta")
     row = cur.fetchone()
     if row is None:
-        sys.exit("error: feed_meta is empty — run migrate-feed first")
+        sys.exit("error: feed_meta is empty, so run migrate-feed first")
     if row[0] != pubkey_b64(key):
-        sys.exit("error: DB pubkey does not match the signing key — refusing to mix keys")
+        sys.exit("error: the database pubkey does not match the signing key, so the two will not be mixed")
 
 
 def entry_exists(cur, entry_id: str) -> bool:
@@ -165,10 +170,10 @@ def insert_entry(cur, e: dict, upsert: bool = False) -> None:
 
 
 def next_id(cur, type_: str) -> str:
-    """Ids are never reused, even after removal — a citation to m-0009 must
-    not silently resolve to different content later. Max over the live feed
-    AND both private archives; a gap in the public sequence is honest
-    evidence of a removal, not a defect."""
+    """Ids are never reused, even after removal, so that a citation to m-0009
+    does not later resolve to different content. The maximum is taken over the
+    live feed and both private archives. A gap in the public sequence is
+    therefore a record of a removal rather than a defect."""
     prefix = ID_PREFIX[type_]
     cur.execute(
         """SELECT id FROM entries WHERE id LIKE %(p)s
@@ -181,7 +186,7 @@ def next_id(cur, type_: str) -> str:
 
 
 def visible_canonical(canon: bytes) -> str:
-    """Render the canonical string with LFs made visible for --dry-run."""
+    """Render the canonical string with the LFs made visible, for --dry-run."""
     return canon.decode("utf-8").replace("\n", "\\n\n") + "␄"  # ␄ marks true end
 
 
@@ -211,7 +216,7 @@ def build_entry(args, key: Ed25519PrivateKey, cur) -> tuple[dict, bytes | None, 
     }
 
     if args.type == "take" and not args.source_url:
-        sys.exit("error: a take needs --source-url (the signature covers your text + the source URL)")
+        sys.exit("error: a take needs --source-url, because the signature covers both the text and the source URL")
     if args.source_url:
         entry["source"] = {"title": args.source_title or args.source_url,
                            "url": args.source_url}
@@ -219,7 +224,7 @@ def build_entry(args, key: Ed25519PrivateKey, cur) -> tuple[dict, bytes | None, 
     clean_bytes = out_name = None
     if args.image:
         if not (args.alt or "").strip():
-            sys.exit("error: --image requires a descriptive --alt")
+            sys.exit("error: --image requires a descriptive --alt value")
         clean_bytes, digest, out_name = process_image(args.image)
         entry["media"] = {
             "url": f"{MEDIA_BASE}/{out_name}" if MEDIA_BASE else out_name,
@@ -231,6 +236,33 @@ def build_entry(args, key: Ed25519PrivateKey, cur) -> tuple[dict, bytes | None, 
     return entry, clean_bytes, out_name
 
 
+QUEUE_LOCK = QUEUE_PATH.with_suffix(".json.lock")
+
+
+@contextmanager
+def queue_lock():
+    """Serialize read-modify-write cycles on queue.json.
+
+    Three programs mutate this file: the ingester, which runs from cron as
+    `claude`; this tool; and the console, which runs as `wsdash`. All three
+    load the file, change it, and rename a new copy over it. Without a lock,
+    two overlapping runs each write a complete document built from their own
+    stale read, and whichever renames last discards the other's edits. The
+    lock is a separate sidecar file, so the rename target is never held open.
+    """
+    QUEUE_LOCK.touch(exist_ok=True)
+    try:
+        os.chmod(QUEUE_LOCK, 0o660)   # both writers need to be able to take it
+    except OSError:
+        pass
+    with open(QUEUE_LOCK, "r+", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def load_queue() -> dict:
     if not QUEUE_PATH.exists():
         return {"candidates": [], "seen": []}
@@ -238,7 +270,10 @@ def load_queue() -> dict:
 
 
 def save_queue(q: dict) -> None:
-    tmp = QUEUE_PATH.with_suffix(".json.tmp")
+    # Unique per process: a fixed "queue.json.tmp" means two concurrent
+    # writers share one scratch file and the second rename fails with
+    # ENOENT after the first has already moved it away.
+    tmp = QUEUE_PATH.with_suffix(f".json.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(q, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     tmp.replace(QUEUE_PATH)
     try:
@@ -247,31 +282,38 @@ def save_queue(q: dict) -> None:
         pass
 
 
-def take_candidate(cve: str) -> tuple[dict, dict]:
-    q = load_queue()
-    cand = next((c for c in q["candidates"] if c["cve"].upper() == cve.upper()), None)
+def take_candidate(cve: str) -> dict:
+    cand = next((c for c in load_queue()["candidates"]
+                 if c["cve"].upper() == cve.upper()), None)
     if cand is None:
         sys.exit(f"error: {cve} is not in the candidate queue (see `queue list`)")
-    return q, cand
+    return cand
 
 
-def retire_candidate(q: dict, cand: dict) -> None:
-    q["candidates"].remove(cand)
-    if cand["cve"] not in q["seen"]:
-        q["seen"].append(cand["cve"])
-    save_queue(q)
+def retire_candidate(cand: dict) -> None:
+    """Re-read the queue under the lock rather than writing back the snapshot
+    taken before the database work. That snapshot may be minutes old by now,
+    and a cron ingest may have added candidates that would otherwise be
+    erased."""
+    with queue_lock():
+        q = load_queue()
+        q["candidates"] = [c for c in q["candidates"]
+                           if c["cve"].upper() != cand["cve"].upper()]
+        if cand["cve"] not in q.setdefault("seen", []):
+            q["seen"].append(cand["cve"])
+        save_queue(q)
 
 
 def cmd_publish_relay(cve: str, dry_run: bool) -> None:
-    """Publish an UNSIGNED relay from a queue candidate.
+    """Publish an unsigned relay from a queue candidate.
 
-    This path never loads the signing key and never calls sign_entry():
-    relays are other people's advisories and must not carry my signature.
-    Text comes from the queue candidate (US-gov public-domain summary) —
-    there is deliberately no way to freehand relay text.
+    This path never loads the signing key and never calls sign_entry(), because
+    relays are other people's advisories and should not carry my signature. The
+    text comes from the queue candidate, which is a US government public-domain
+    summary. There is deliberately no way to write relay text by hand.
     """
-    q, cand = take_candidate(cve)
-    conn = db_conn()  # DB access, yes — key access, never, in this path
+    cand = take_candidate(cve)
+    conn = db_conn()  # this path uses the database but never the signing key
     cur = conn.cursor()
 
     entry_id = f"r-{cand['cve'].upper()}"
@@ -284,7 +326,7 @@ def cmd_publish_relay(cve: str, dry_run: bool) -> None:
     if len(recent) >= RELAY_CAP_PER_WEEK:
         sys.exit(f"relay cap reached: {len(recent)}/{RELAY_CAP_PER_WEEK} unsigned relays "
                  f"in the last 7 days ({', '.join(recent)}).\n"
-                 f"Write a take instead — that's the point of the cap.")
+                 f"Write a signed take instead, which is what the cap is for.")
 
     entry = {
         "id": entry_id,
@@ -300,7 +342,7 @@ def cmd_publish_relay(cve: str, dry_run: bool) -> None:
         return
     insert_entry(cur, entry)
     conn.commit()
-    retire_candidate(q, cand)
+    retire_candidate(cand)
     print(f"published UNSIGNED relay {entry_id} -> postgres:waelsocial")
     print(f"relay budget: {len(recent) + 1}/{RELAY_CAP_PER_WEEK} used this week")
 
@@ -311,21 +353,22 @@ EDIT_COLS = ("id", "ts", "ts_at", "type", "text", "tags", "source_title",
 
 
 def cmd_edit(args, key: Ed25519PrivateKey) -> None:
-    """Edit text/tags of an existing signed post -> waelsocial-v2.
+    """Edit the text and tags of an existing signed post, producing a
+    waelsocial-v2 entry.
 
-    Everything else is frozen: id, ts (the original publish time), type,
-    source, media — argv flags that would change them are rejected. The
-    pre-edit row, old signature included, is archived into entries_revisions
-    in the same transaction that updates the entry, so an edit can never
-    silently rewrite history. Relays cannot be edited: they are unsigned by
-    design and there would be nothing honest to re-sign.
+    Everything else is frozen: the id, ts (the original publish time), type,
+    source and media. Command-line flags that would change any of them are
+    rejected. The pre-edit row, including its old signature, is archived into
+    entries_revisions in the same transaction that updates the entry, so an
+    edit cannot quietly rewrite history. Relays cannot be edited, because they
+    are unsigned by design and there would be nothing to re-sign.
     """
     for flag, name in ((args.type, "--type"), (args.source_url, "--source-url"),
                        (args.source_title, "--source-title"), (args.image, "--image"),
                        (args.alt, "--alt"), (args.id_override, "--id"),
                        (args.ts_override, "--ts")):
         if flag:
-            sys.exit(f"error: {name} is not allowed with --edit — only text and tags are editable")
+            sys.exit(f"error: {name} is not allowed with --edit, because only text and tags are editable")
 
     conn = db_conn()
     cur = conn.cursor()
@@ -336,7 +379,7 @@ def cmd_edit(args, key: Ed25519PrivateKey) -> None:
         sys.exit(f"error: {args.edit} is not in the feed")
     old = dict(zip(EDIT_COLS, row))
     if old["type"] not in SIGNABLE_TYPES:
-        sys.exit(f"error: {old['id']} is a {old['type']} — relays are unsigned and cannot be edited")
+        sys.exit(f"error: {old['id']} is a {old['type']}; relays are unsigned and cannot be edited")
 
     entry = {
         "id": old["id"],
@@ -380,11 +423,13 @@ def cmd_edit(args, key: Ed25519PrivateKey) -> None:
 
 
 def cmd_resign(path: Path, key: Ed25519PrivateKey) -> None:
-    """Migration helper: (re-)sign entries from a JSON file into the feed.
+    """Migration helper that signs or re-signs entries from a JSON file into
+    the feed.
 
-    Accepts a JSON array of entries or a full feed object. Existing sigs are
-    discarded; mine/take get fresh signatures from the current key, relays
-    stay unsigned. Entries replace same-id entries already in the feed.
+    This accepts either a JSON array of entries or a full feed object. Existing
+    signatures are discarded. Entries of type mine and take receive fresh
+    signatures from the current key, and relays remain unsigned. An entry
+    replaces any entry already in the feed with the same id.
     """
     data = json.loads(path.read_text(encoding="utf-8"))
     entries = data["entries"] if isinstance(data, dict) else data
@@ -410,35 +455,37 @@ def main() -> None:
         prog="sign-post",
         description="Author and sign a waelsocial-v1 feed entry.")
     p.add_argument("--type", choices=SIGNABLE_TYPES,
-                   help="entry type (relays are unsigned by design and not accepted)")
+                   help="entry type; relays are unsigned by design and are not accepted")
     p.add_argument("--text", help="post text (or use --text-file / stdin)")
     p.add_argument("--text-file", type=Path)
     p.add_argument("--tags", default=None,
-                   help="comma-separated tags (with --edit: omit to keep, empty to clear)")
+                   help="comma-separated tags; with --edit, omit to keep them or pass an empty value to clear")
     p.add_argument("--source-title")
-    p.add_argument("--source-url", help="required for takes; covered by the signature")
-    p.add_argument("--image", type=Path, help="attach an image (EXIF strip is mandatory and automatic)")
+    p.add_argument("--source-url",
+                   help="required for takes, and covered by the signature")
+    p.add_argument("--image", type=Path,
+                   help="attach an image; the EXIF strip is automatic and cannot be skipped")
     p.add_argument("--alt", help="alt text, required with --image")
     p.add_argument("--id", dest="id_override", help="override id (migrations/testing)")
     p.add_argument("--ts", dest="ts_override", help="override ISO-8601Z timestamp (migrations/testing)")
     p.add_argument("--dry-run", action="store_true",
-                   help="print canonical string + entry JSON; write nothing")
+                   help="print the canonical string and entry JSON without writing anything")
     p.add_argument("--emit-canonical", type=Path,
-                   help="also write the exact canonical bytes to a file (for hexdump checks)")
+                   help="also write the exact canonical bytes to a file, for hexdump checks")
     p.add_argument("--show-pubkey", action="store_true",
                    help="print the raw-32-byte base64 public key and exit")
     p.add_argument("--resign", type=Path, metavar="ENTRIES_JSON",
                    help="(re-)sign entries from a JSON file into the feed")
     p.add_argument("--edit", metavar="ENTRY-ID",
                    help="edit text/tags of an existing signed post "
-                        "(re-signed as waelsocial-v2; pre-edit row archived)")
+                        "(re-signed as waelsocial-v2, with the pre-edit row archived)")
     p.add_argument("--take-from", metavar="CVE-ID",
-                   help="signed take about a queue candidate (source prefilled, candidate retired)")
+                   help="signed take about a queue candidate; the source is prefilled and the candidate retired")
     p.add_argument("--publish-relay", metavar="CVE-ID",
-                   help="publish a queue candidate as an UNSIGNED relay (capped, never signed)")
+                   help="publish a queue candidate as an unsigned relay; capped per week and never signed")
     args = p.parse_args()
 
-    if args.publish_relay:  # before load_key(): this path must never touch the key
+    if args.publish_relay:  # handled before load_key(), so this path never touches the key
         cmd_publish_relay(args.publish_relay, args.dry_run)
         return
 
@@ -456,12 +503,12 @@ def main() -> None:
         cmd_resign(args.resign, key)
         return
 
-    queue = cand = None
+    cand = None
     if args.take_from:
         if args.type not in (None, "take"):
             p.error("--take-from implies --type take")
         args.type = "take"
-        queue, cand = take_candidate(args.take_from)
+        cand = take_candidate(args.take_from)
         if not args.source_url:
             args.source_url = cand["url"]
             args.source_title = args.source_title or cand["title"]
@@ -496,7 +543,7 @@ def main() -> None:
     insert_entry(cur, entry)
     conn.commit()
     if cand is not None:
-        retire_candidate(queue, cand)
+        retire_candidate(cand)
         print(f"retired {cand['cve']} from the candidate queue")
     print(f"signed {entry['id']} -> postgres:waelsocial")
 

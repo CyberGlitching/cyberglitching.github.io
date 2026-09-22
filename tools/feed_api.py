@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""waelsocial feed API — phase 1. Deliberately boring and disposable;
-the Rust service (Ch.6) replaces this behind the identical contract.
+"""waelsocial feed API, phase 1.
 
-Read-only by construction: the only file access in this program is opening
-feed.json for reading. It runs as the unprivileged `wsapi` user, which
-cannot traverse /home/claude — the signing key is unreachable from this
-process even in principle (systemd additionally sets ProtectHome=yes).
+This is deliberately simple and disposable. The Rust service described in
+chapter 6 replaces it behind an identical contract.
 
-Contract: GET /api/feed[?before=<ISO-ts>&limit=<n>]
-  -> { v:1, alg:"Ed25519", pubkey, generated, entries[] } newest-first
-  limit: default 20, hard max 50. No bulk-export endpoint exists.
+It is read-only by construction: the only file access in the program is opening
+feed.json for reading. It runs as the unprivileged `wsapi` user, which cannot
+traverse /home/claude, so the signing key is unreachable from this process.
+systemd additionally sets ProtectHome=yes.
+
+The contract is GET /api/feed[?before=<ISO-ts>&limit=<n>], which returns
+{ v:1, alg:"Ed25519", pubkey, generated, entries[] } with the newest entries
+first. limit defaults to 20 and is capped at 50. There is no bulk-export
+endpoint.
 """
 
 import json
@@ -18,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 FEED_PATH = os.environ.get("WAELSOCIAL_FEED", "/srv/waelsocial/feed.json")
-BIND = ("127.0.0.1", 8080)  # only cloudflared can reach this
+BIND = ("127.0.0.1", 8080)  # reachable only through cloudflared
 ALLOW_ORIGIN = "https://wael.sh"
 DEFAULT_LIMIT, MAX_LIMIT = 20, 50
 
@@ -62,7 +65,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(200, {**feed, "entries": entries[:limit]})
 
     def do_HEAD(self):
-        self.do_GET()  # send_json suppresses the body for HEAD
+        self.do_GET()  # send_json omits the body when the method is HEAD
 
     def send_json(self, code: int, obj: dict) -> None:
         data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
@@ -78,7 +81,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(data)
 
     def log_message(self, fmt, *args):
-        pass  # no per-request logging: nothing sensitive to record, no IP trail
+        pass  # no per-request logging, so no record of visitor IP addresses
 
 
 if __name__ == "__main__":
