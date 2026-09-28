@@ -28,7 +28,8 @@
   <meta property="og:image" content="https://wael.sh/assets/og-cover.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Wael Shahadeh, cybersecurity senior at Marist University: security work you can check for yourself." />
+  <meta property="og:image:alt"
+    content="Wael Shahadeh, cybersecurity senior at Marist University: security work you can check for yourself." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://wael.sh/assets/og-cover.png" />
 
@@ -53,7 +54,8 @@
       <a class="brand" href="#/" aria-label="Home">
         <span class="brand-text" id="brandText"></span><span class="brand-cursor" aria-hidden="true">▌</span>
       </a>
-      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks">menu</button>
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false"
+        aria-controls="navLinks">menu</button>
       <nav class="nav-links" id="navLinks" aria-label="Site">
         <a class="nav-link" href="#/" data-nav="home">Home<span class="arr" aria-hidden="true">→</span></a>
         <a class="nav-link" href="#/work" data-nav="work">Work<span class="arr" aria-hidden="true">→</span></a>
@@ -271,7 +273,8 @@
     <div class="page" data-page="work" role="region" aria-label="Work" tabindex="-1">
       <section class="page-shell">
         <p class="kicker">Selected work</p>
-        <h1 class="page-title page-title--tight page-title--measure">How each project started and where it ended up.</h1>
+        <h1 class="page-title page-title--tight page-title--measure">How each project started and where it ended up.
+        </h1>
         <p class="page-lede">Four projects across research, engineering and community work. Expand any one of them
           for the full account.</p>
         <div class="case-list">
@@ -420,7 +423,8 @@
     <div class="page" data-page="homelab" role="region" aria-label="Homelab" tabindex="-1">
       <section class="lab-intro">
         <p class="kicker">Homelab</p>
-        <h1 class="page-title page-title--tight page-title--measure">A lab network built for testing malware safely.</h1>
+        <h1 class="page-title page-title--tight page-title--measure">A lab network built for testing malware safely.
+        </h1>
         <p class="lab-lede">The network is segmented so that anything executed stays where it was executed. Malware
           runs on an isolated VLAN with no route out, and capture and analysis happen on a separate management
           segment.</p>
@@ -508,7 +512,8 @@
               <rect x="720" y="214" width="260" height="112" fill="#1A1113" stroke="#E8A87C" stroke-width="1.5"></rect>
               <text x="740" y="240" fill="#E8A87C" font-family="IBM Plex Mono, monospace" font-size="10.5"
                 letter-spacing="1.5">VLAN 66 · DETONATION</text>
-              <text x="740" y="266" fill="#F5F3EF" font-family="Archivo, sans-serif" font-size="15" font-weight="700">Kali
+              <text x="740" y="266" fill="#F5F3EF" font-family="Archivo, sans-serif" font-size="15"
+                font-weight="700">Kali
                 + target VMs</text>
               <text x="740" y="288" fill="#A9B4BE" font-family="IBM Plex Sans, sans-serif" font-size="13">Metasploit ·
                 snapshot revert</text>
@@ -521,7 +526,8 @@
               <text x="520" y="377" text-anchor="middle" fill="#E8A87C" font-family="IBM Plex Mono, monospace"
                 font-size="11" letter-spacing="1.1">ONE-WAY TAP</text>
               <text x="520" y="424" text-anchor="middle" fill="#7C8791" font-family="IBM Plex Sans, sans-serif"
-                font-size="13.5">Captures leave the detonation VLAN through a tap, and nothing routes back into it.</text>
+                font-size="13.5">Captures leave the detonation VLAN through a tap, and nothing routes back into
+                it.</text>
               <line x1="60" y1="448" x2="980" y2="448" stroke="rgba(245,243,239,.16)" stroke-width="1"></line>
             </svg>
           </div>
@@ -662,7 +668,8 @@
             <div class="ws-filters" role="group" aria-label="Filter feed">
               <button type="button" class="ws-pill" data-ws-filter="all" aria-pressed="false">All</button>
               <button type="button" class="ws-pill on" data-ws-filter="mine" aria-pressed="true">My work</button>
-              <button type="button" class="ws-pill" data-ws-filter="signal" aria-pressed="false">Security signal</button>
+              <button type="button" class="ws-pill" data-ws-filter="signal" aria-pressed="false">Security
+                signal</button>
             </div>
             <div id="ws-feed" class="ws-feed">
               <p class="ws-empty">Loading feed…</p>
@@ -810,7 +817,8 @@
               <p>None from the page itself. Fonts were previously loaded from Google, which meant Google
                 received your IP address and User-Agent on every visit. They are now served from this origin. If you
                 open your browser's network tab, every request goes to <code>wael.sh</code> or
-                <code>api.wael.sh</code>.</p>
+                <code>api.wael.sh</code>.
+              </p>
             </div>
           </div>
           <div class="privacy-row">
@@ -819,7 +827,8 @@
               <p>The feed page and the card on the home page make a single <code>GET</code> request to
                 <code>api.wael.sh/api/feed</code>. It carries no cookies, no credentials and no request body. Your
                 browser sends its IP address, User-Agent and <code>Origin</code> header, as it does for any server.
-                The service does not write a per-request log, and its CORS policy permits only this origin.</p>
+                The service does not write a per-request log, and its CORS policy permits only this origin.
+              </p>
             </div>
           </div>
           <div class="privacy-row">
@@ -836,7 +845,8 @@
                 <code>api.wael.sh</code> is exposed through a Cloudflare tunnel, so GitHub and Cloudflare see
                 request metadata such as IP address, User-Agent and timestamps, under their own policies. This is
                 the same as with any host or CDN. I do not have access to that data and it is not combined with
-                anything else.</p>
+                anything else.
+              </p>
             </div>
           </div>
           <div class="privacy-row">
@@ -861,13 +871,15 @@
               <p>This page delivers its Content-Security-Policy in a <code>&lt;meta&gt;</code> tag, because
                 GitHub Pages cannot set response headers. Both <code>frame-ancestors</code> and
                 <code>X-Content-Type-Options</code> can only be set as headers, so they are not enforced here. It
-                seems better to note that than to present the policy as complete.</p>
+                seems better to note that than to present the policy as complete.
+              </p>
             </div>
           </div>
         </div>
 
         <p class="privacy-foot">Last reviewed 22 September 2026. Questions:
-          <a href="mailto:shahadehwael@gmail.com">shahadehwael@gmail.com</a>.</p>
+          <a href="mailto:shahadehwael@gmail.com">shahadehwael@gmail.com</a>.
+        </p>
       </section>
     </div>
 
@@ -879,8 +891,7 @@
       <p class="tagline">Personal site, updated as projects progress.</p>
       <nav class="footer-links" aria-label="Footer">
         <a href="#/privacy">Privacy</a>
-        <a href="https://github.com/CyberGlitching/cyberglitching.github.io" target="_blank" rel="noopener">Source
-          <span class="arr" aria-hidden="true">↗</span></a>
+        <span class="arr" aria-hidden="true">↗</span></a>
       </nav>
       <button type="button" class="btn-quiet" id="toTop">Top <span class="arr" aria-hidden="true">↑</span></button>
     </div>
