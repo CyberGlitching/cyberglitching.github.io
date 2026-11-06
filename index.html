@@ -8,7 +8,7 @@
   <meta name="description"
     content="Wael Shahadeh, cybersecurity senior at Marist University. Malware research, network analysis, secure lab builds, and tooling whose output you can verify yourself." />
   <link rel="canonical" href="https://wael.sh/" />
-  <meta name="theme-color" content="#F5F3EF" />
+  <meta name="theme-color" content="#0B0305" />
 
   <!-- GitHub Pages cannot set response headers, so the policy is delivered in a
        meta tag instead. Note that frame-ancestors and X-Content-Type-Options can
@@ -39,10 +39,9 @@
 
   <!-- Fonts are served from this origin, so no request from this page goes to a
        third party. -->
-  <link rel="preload" href="assets/fonts/ibm-plex-sans-868a235a.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="assets/fonts/archivo-2d6953d7.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="assets/fonts.css?v=v8" />
-  <link rel="stylesheet" href="style.css?v=v8" />
+  <link rel="preload" href="assets/fonts/saira-d5f1ee1c.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/fonts.css?v=v12" />
+  <link rel="stylesheet" href="style.css?v=v12" />
 </head>
 
 <body>
@@ -52,18 +51,19 @@
   <header class="nav">
     <div class="nav-bar">
       <a class="brand" href="#/" aria-label="Home">
-        <span class="brand-text" id="brandText"></span><span class="brand-cursor" aria-hidden="true">▌</span>
+        <span class="brand-text" id="brandText">wael.sh</span><span class="brand-cursor" aria-hidden="true">▌</span>
       </a>
       <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false"
         aria-controls="navLinks">menu</button>
       <nav class="nav-links" id="navLinks" aria-label="Site">
-        <a class="nav-link" href="#/" data-nav="home">Home<span class="arr" aria-hidden="true">→</span></a>
-        <a class="nav-link" href="#/work" data-nav="work">Work<span class="arr" aria-hidden="true">→</span></a>
-        <a class="nav-link" href="#/homelab" data-nav="homelab">Homelab<span class="arr" aria-hidden="true">→</span></a>
-        <a class="nav-link" href="#/feed" data-nav="feed">Feed<span class="arr" aria-hidden="true">→</span></a>
-        <a class="nav-link" href="#/writing" data-nav="writing">Writing<span class="arr" aria-hidden="true">→</span></a>
-        <a class="nav-link" href="#/about" data-nav="about">About<span class="arr" aria-hidden="true">→</span></a>
-        <a class="nav-link" href="#/contact" data-nav="contact">Contact<span class="arr" aria-hidden="true">→</span></a>
+        <a class="nav-link" href="#/" data-nav="home">Home</a>
+        <a class="nav-link" href="#/work" data-nav="work">Work</a>
+        <a class="nav-link" href="#/homelab" data-nav="homelab">Homelab</a>
+        <a class="nav-link" href="#/feed" data-nav="feed">Feed</a>
+        <a class="nav-link" href="#/writing" data-nav="writing">Writing</a>
+        <a class="nav-link" href="#/about" data-nav="about">About</a>
+        <a class="nav-link" href="#/contact" data-nav="contact">Contact</a>
+        <button type="button" id="scatterBtn" class="nav-search" hidden>Scatter</button>
         <button type="button" id="paletteBtn" class="nav-search">Search<span class="kbd-hint">⌘K</span></button>
       </nav>
     </div>
@@ -84,186 +84,171 @@
     <div class="page" data-page="home" role="region" aria-label="Intro" tabindex="-1">
 
       <section class="hero">
-        <canvas id="netCanvas" aria-hidden="true"></canvas>
-        <div class="hero-veil" aria-hidden="true"></div>
-        <div class="hero-inner">
-          <div class="hero-copy">
-            <div class="hero-eyebrow-wrap">
-              <p class="hero-eyebrow">Wael Shahadeh — Cybersecurity, Marist '27</p>
-            </div>
-            <h1 class="hero-name">Security work you can check for yourself.</h1>
+        <h1 class="poster">
+          <span class="poster-line"><span class="word" data-piece="w-security">Security</span> <span class="word" data-piece="w-work">work</span></span>
+          <span class="poster-line"><span class="word" data-piece="w-you">you</span> <span class="word" data-piece="w-can">can</span> <span class="word" data-piece="w-check">check</span></span>
+          <span class="poster-line"><span class="word" data-piece="w-for">for</span> <span class="word" data-piece="w-yourself">yourself.</span></span>
+        </h1>
+        <div class="hero-row">
+          <div class="piece panel hero-note" data-piece="hero-note">
+            <p class="tab">Wael Shahadeh, Marist '27</p>
             <p class="hero-sub">Malware research, network analysis and secure lab builds, plus tools that let you
               verify their output rather than take my word for it.</p>
-            <a class="btn-line hero-cta" href="#/work">See the work <span class="arr" aria-hidden="true">→</span></a>
+            <a class="btn" href="#/work">See the work</a>
+          </div>
+          <div class="piece panel panel--amber hero-hint" data-piece="hero-hint">
+            <p class="tab">Tip</p>
+            <p>Drag a word, or a window by its title bar. The linter agent will put it back.</p>
           </div>
         </div>
       </section>
 
-      <section class="band band--ink feature" aria-label="Featured build">
-        <div class="feature-hatch" aria-hidden="true"></div>
-        <div class="feature-inner">
-          <div data-reveal>
-            <p class="kicker kicker--mint">Featured build</p>
-            <h2 class="feature-h2">Every post is checked against one signing key.</h2>
-            <p class="feature-p">WaelSocial signs each entry offline with Ed25519, and your browser checks that
-              signature against a public key pinned in the page. Because the key is fixed in the source, a
-              compromised host cannot produce a valid checkmark.</p>
-            <a class="btn-under" href="#/feed">Open the feed <span class="arr" aria-hidden="true">→</span></a>
+      <section class="board board--entry" aria-label="Featured build">
+        <div class="piece panel entry-copy" data-piece="entry-copy">
+          <p class="tab">Featured build</p>
+          <h2 class="panel-h2">Every post is checked against one signing key.</h2>
+          <p>WaelSocial signs each entry offline with Ed25519, and your browser checks that
+            signature against a public key pinned in the page. Because the key is fixed in the source, a
+            compromised host cannot produce a valid checkmark.</p>
+          <a class="btn" href="#/feed">Open the feed</a>
+        </div>
+        <div class="piece vfy" data-piece="entry-slip">
+          <p class="tab">Signed entry</p>
+          <div class="vfy-head">
+            <span class="vfy-algo">Ed25519</span>
+            <span class="vfy-pill" id="vfyPill">Verifying</span>
           </div>
-          <div class="vfy" data-reveal>
-            <div class="vfy-head">
-              <span class="vfy-head-label">Signed entry</span>
-              <span class="vfy-pill" id="vfyPill">Verifying</span>
-            </div>
-            <div class="vfy-main">
-              <p class="vfy-body" id="vfyBody"></p>
-              <dl class="vfy-meta">
-                <dt>key id</dt>
-                <dd id="vfyKey"></dd>
-                <dt>signed</dt>
-                <dd id="vfyTime"></dd>
-                <dt>signature</dt>
-                <dd id="vfySig"></dd>
-              </dl>
-            </div>
-            <div class="vfy-track">
-              <div class="vfy-bar" id="vfyBar"></div>
-            </div>
-            <div class="vfy-foot">
-              <span class="vfy-dot" data-vfy-dot="0"></span>
-              <span class="vfy-dot" data-vfy-dot="1"></span>
-              <span class="vfy-dot" data-vfy-dot="2"></span>
-              <span class="vfy-algo">Ed25519</span>
-            </div>
+          <div class="vfy-main">
+            <p class="vfy-body" id="vfyBody"></p>
+            <dl class="vfy-meta">
+              <dt>key id</dt>
+              <dd id="vfyKey"></dd>
+              <dt>signed</dt>
+              <dd id="vfyTime"></dd>
+              <dt>signature</dt>
+              <dd id="vfySig"></dd>
+            </dl>
+          </div>
+          <div class="vfy-track">
+            <div class="vfy-bar" id="vfyBar"></div>
+          </div>
+          <div class="vfy-foot">
+            <span class="vfy-dot" data-vfy-dot="0"></span>
+            <span class="vfy-dot" data-vfy-dot="1"></span>
+            <span class="vfy-dot" data-vfy-dot="2"></span>
           </div>
         </div>
       </section>
 
-      <section class="areas-section" aria-label="Practice areas">
-        <p class="kicker kicker--muted" data-reveal>Practice areas</p>
-        <div class="cardrow cardrow--areas">
-          <a class="cell area" href="#/work" data-reveal>
-            <span class="cell-tag">01 / Analysis</span>
-            <span class="cell-title">Malware &amp; traffic</span>
-            <span class="cell-body">Behavioral analysis of system logs and packet captures, using Wireshark, Kali
-              and Metasploit.</span>
-            <span class="cell-cta">See the research <span class="arr" aria-hidden="true">→</span></span>
-          </a>
-          <a class="cell area" href="#/feed" data-reveal>
-            <span class="cell-tag">02 / Build</span>
-            <span class="cell-title">Verifiable tooling</span>
-            <span class="cell-body">Python pipelines and cryptographic verification with Ed25519 and Web
-              Crypto.</span>
-            <span class="cell-cta">See the build <span class="arr" aria-hidden="true">→</span></span>
-          </a>
-          <a class="cell area" href="#/homelab" data-reveal>
-            <span class="cell-tag">03 / Lab</span>
-            <span class="cell-title">Segmented homelab</span>
-            <span class="cell-body">A network arranged so that malware can run without reaching anything else, using
-              three segments and a single firewall between them.</span>
-            <span class="cell-cta">See the topology <span class="arr" aria-hidden="true">→</span></span>
-          </a>
-          <a class="cell area" href="#/work" data-reveal>
-            <span class="cell-tag">04 / People</span>
-            <span class="cell-title">Security literacy</span>
-            <span class="cell-body">Resident assistant and advisor work, presenting difficult topics clearly enough
-              that people act on them.</span>
-            <span class="cell-cta">See the programming <span class="arr" aria-hidden="true">→</span></span>
-          </a>
-        </div>
+      <section class="board board--areas" aria-label="Practice areas">
+        <a class="piece panel panel--sig area" href="#/work" data-piece="area-analysis">
+          <span class="tab area-tag">Analysis</span>
+          <span class="area-title">Malware &amp; traffic</span>
+          <span class="area-body">Behavioral analysis of system logs and packet captures, using Wireshark, Kali
+            and Metasploit.</span>
+          <span class="area-cta">See the research</span>
+        </a>
+        <a class="piece panel panel--split area" href="#/feed" data-piece="area-build">
+          <span class="tab area-tag">Build</span>
+          <span class="area-title">Verifiable tooling</span>
+          <span class="area-body">Python pipelines and cryptographic verification with Ed25519 and Web
+            Crypto.</span>
+          <span class="area-cta">See the build</span>
+        </a>
+        <a class="piece panel panel--ember area" href="#/homelab" data-piece="area-lab">
+          <span class="tab area-tag">Lab</span>
+          <span class="area-title">Segmented homelab</span>
+          <span class="area-body">A network arranged so that malware can run without reaching anything else, using
+            three segments and a single firewall between them.</span>
+          <span class="area-cta">See the topology</span>
+        </a>
+        <a class="piece panel panel--amber area" href="#/work" data-piece="area-people">
+          <span class="tab area-tag">People</span>
+          <span class="area-title">Security literacy</span>
+          <span class="area-body">Resident assistant and advisor work, presenting difficult topics clearly enough
+            that people act on them.</span>
+          <span class="area-cta">See the programming</span>
+        </a>
       </section>
 
-      <section class="band band--deep" aria-label="Console">
-        <div class="console-section">
-          <p class="kicker kicker--mint" data-reveal>Console</p>
-          <p class="console-lede" data-reveal>Every page on this site can be reached by typing. Use one of the buttons
-            below, or run <code>help</code> for the full list of commands.</p>
-          <div class="terminal" data-reveal>
-            <div class="term-header">
-              <span>wael@portfolio:~</span>
-              <span class="term-hint">Esc clears, ⌘K searches</span>
+      <section class="board board--console" aria-label="Console">
+        <div class="piece panel console-note" data-piece="console-note">
+          <p class="tab">Console</p>
+          <h2 class="canvas-h2">Every page can be reached by typing.</h2>
+          <p class="canvas-p">Use one of the buttons, or run <code>help</code> for the full list of commands.</p>
+        </div>
+        <div class="piece terminal" data-piece="console">
+          <div class="tab term-header">
+            <span>wael@portfolio:~</span>
+            <span class="term-hint">Esc clears, ⌘K searches</span>
+          </div>
+          <div class="term-chips">
+            <button type="button" class="term-chip" data-cmd="whoami">whoami</button>
+            <button type="button" class="term-chip" data-cmd="projects">projects</button>
+            <button type="button" class="term-chip" data-cmd="verify">verify</button>
+            <button type="button" class="term-chip" data-cmd="homelab">homelab</button>
+            <button type="button" class="term-chip" data-cmd="help">help</button>
+          </div>
+          <div class="term-body" id="termBody">
+            <div id="termLines" aria-live="polite">
+              <div class="term-line"><span class="t-prompt">$ </span><span class="t-cmd">whoami</span></div>
+              <div class="term-line">Wael Shahadeh, cybersecurity senior at Marist University. Malware research and digital investigations. Type `help` for the command list.</div>
             </div>
-            <div class="term-chips">
-              <button type="button" class="term-chip" data-cmd="whoami">whoami</button>
-              <button type="button" class="term-chip" data-cmd="projects">projects</button>
-              <button type="button" class="term-chip" data-cmd="verify">verify</button>
-              <button type="button" class="term-chip" data-cmd="homelab">homelab</button>
-              <button type="button" class="term-chip" data-cmd="help">help</button>
-            </div>
-            <div class="term-body" id="termBody">
-              <div id="termLines" aria-live="polite">
-                <div class="term-line"><span class="t-prompt">$ </span><span class="t-cmd">whoami</span></div>
-                <div class="term-line">Wael Shahadeh, cybersecurity senior at Marist University. Malware research and
-                  digital investigations. Type `help` for the command list.</div>
-              </div>
-              <div class="term-input-row">
-                <span class="t-prompt">$ </span>
-                <input id="termInput" spellcheck="false" autocomplete="off" aria-label="Terminal input" />
-              </div>
+            <div class="term-input-row">
+              <span class="t-prompt">$ </span>
+              <input id="termInput" spellcheck="false" autocomplete="off" aria-label="Terminal input" />
             </div>
           </div>
         </div>
       </section>
 
-      <section class="band band--ink" aria-label="Work preview">
-        <div class="teasers-section">
-          <h2 class="teasers-h2" data-reveal>Read the case studies, or run the tools yourself.</h2>
-          <p class="teasers-lede" data-reveal>Four projects across research, engineering and community work. Each
+      <section class="board board--teasers" aria-label="Work preview">
+        <div class="piece panel teasers-head" data-piece="teasers-head">
+          <p class="tab">Case studies</p>
+          <h2 class="canvas-h2">Read the case studies, or run the tools yourself.</h2>
+          <p class="canvas-p">Four projects across research, engineering and community work. Each
             write-up covers the problem, the approach taken and the result.</p>
-          <div class="cardrow cardrow--teasers">
-            <a class="cell teaser" href="#/work" data-reveal>
-              <span class="cell-tag">Cryptography</span>
-              <span class="cell-title">WaelSocial — a signed feed</span>
-              <span class="cell-cta">Read now <span class="arr" aria-hidden="true">→</span></span>
-            </a>
-            <a class="cell teaser" href="#/work" data-reveal>
-              <span class="cell-tag">Detection</span>
-              <span class="cell-title">macOS backdoor detection</span>
-              <span class="cell-cta">Read now <span class="arr" aria-hidden="true">→</span></span>
-            </a>
-            <a class="cell teaser" href="#/work" data-reveal>
-              <span class="cell-tag">Operations</span>
-              <span class="cell-title">PC repair &amp; OS re-imaging</span>
-              <span class="cell-cta">Read now <span class="arr" aria-hidden="true">→</span></span>
-            </a>
-            <a class="cell teaser" href="#/work" data-reveal>
-              <span class="cell-tag">Community</span>
-              <span class="cell-title">RA programming</span>
-              <span class="cell-cta">Read now <span class="arr" aria-hidden="true">→</span></span>
-            </a>
-            <a class="cell teaser" href="#/work" data-reveal>
-              <span class="cell-tag cell-tag--dim">4 projects</span>
-              <span class="cell-title">View all work</span>
-              <span class="cell-cta">Browse <span class="arr" aria-hidden="true">→</span></span>
-            </a>
-          </div>
+        </div>
+        <div class="teaser-stack">
+          <a class="piece panel teaser" href="#/work" data-piece="t-signed">
+            <span class="tab teaser-tag">Cryptography</span>
+            <span class="teaser-title">WaelSocial, a signed feed</span>
+          </a>
+          <a class="piece panel teaser" href="#/work" data-piece="t-macos">
+            <span class="tab teaser-tag">Detection</span>
+            <span class="teaser-title">macOS backdoor detection</span>
+          </a>
+          <a class="piece panel teaser" href="#/work" data-piece="t-repair">
+            <span class="tab teaser-tag">Operations</span>
+            <span class="teaser-title">PC repair &amp; OS re-imaging</span>
+          </a>
+          <a class="piece panel teaser" href="#/work" data-piece="t-ra">
+            <span class="tab teaser-tag">Community</span>
+            <span class="teaser-title">RA programming</span>
+          </a>
         </div>
       </section>
 
-      <section class="explore-section" aria-label="Explore">
-        <h2 class="explore-h2" data-reveal>Where to go next.</h2>
-        <div class="cardrow cardrow--explore">
-          <a class="cell" href="#/work" data-reveal>
-            <span class="cell-title">Work</span>
-            <span class="cell-body">Four case studies, each covering the problem, the approach taken and the
+      <section class="board board--explore" aria-label="Explore">
+        <h2 class="canvas-h2 explore-h2">Where to go next.</h2>
+        <div class="explore-grid">
+          <a class="exit piece" href="#/work" data-piece="x-work">
+            <span class="tab exit-title">Work</span>
+            <span class="exit-body">Four case studies, each covering the problem, the approach taken and the
               outcome.</span>
-            <span class="cell-cta">Read the work <span class="arr" aria-hidden="true">→</span></span>
           </a>
-          <a class="cell" href="#/feed" data-reveal>
-            <span class="cell-title">Feed</span>
-            <span class="cell-body">Entries you can verify yourself, alongside labelled security news I am
+          <a class="exit piece" href="#/feed" data-piece="x-feed">
+            <span class="tab exit-title">Feed</span>
+            <span class="exit-body">Entries you can verify yourself, alongside labelled security news I am
               following.</span>
-            <span class="cell-cta">Open the feed <span class="arr" aria-hidden="true">→</span></span>
           </a>
-          <a class="cell" href="#/writing" data-reveal>
-            <span class="cell-title">Writing</span>
-            <span class="cell-body">Notes and write-ups from projects I have built, broken or had to explain.</span>
-            <span class="cell-cta">Get the latest <span class="arr" aria-hidden="true">→</span></span>
+          <a class="exit piece" href="#/writing" data-piece="x-writing">
+            <span class="tab exit-title">Writing</span>
+            <span class="exit-body">Notes and write-ups from projects I have built, broken or had to explain.</span>
           </a>
-          <a class="cell" href="#/contact" data-reveal>
-            <span class="cell-title">Contact</span>
-            <span class="cell-body">Open to internships, research collaborations and security work.</span>
-            <span class="cell-cta">Get in touch <span class="arr" aria-hidden="true">→</span></span>
+          <a class="exit piece" href="#/contact" data-piece="x-contact">
+            <span class="tab exit-title">Contact</span>
+            <span class="exit-body">Open to internships, research collaborations and security work.</span>
           </a>
         </div>
       </section>
@@ -272,31 +257,23 @@
     <!-- ======================= WORK ======================= -->
     <div class="page" data-page="work" role="region" aria-label="Work" tabindex="-1">
       <section class="page-shell">
-        <p class="kicker">Selected work</p>
-        <h1 class="page-title page-title--tight page-title--measure">How each project started and where it ended up.
-        </h1>
-        <p class="page-lede">Four projects across research, engineering and community work. Expand any one of them
-          for the full account.</p>
-        <div class="case-list">
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">Selected work</p>
+          <h1 class="page-title">How each project started and where it ended up.</h1>
+          <p class="page-lede">Four projects across research, engineering and community work. Open any tab for the full account.</p>
+        </div>
+        <div class="piece panel case-list" data-piece="cases">
 
           <article class="case open">
-            <h2 class="case-heading">
-              <button type="button" class="case-head" aria-expanded="true">
-                <span class="case-num">01</span>
-                <span class="case-titles">
-                  <span class="case-status">Shipped · 2026</span>
-                  <span class="case-title-text">WaelSocial — a signed feed</span>
-                </span>
-                <span class="case-caret">Close <span class="arr" aria-hidden="true">↑</span></span>
-              </button>
-            </h2>
+            <p class="case-status">Shipped, 2026</p>
+            <h2 class="case-heading">WaelSocial, a signed feed</h2>
             <div class="case-body">
               <p class="case-summary">A social-style feed in which every authored post is signed offline with Ed25519
                 and verified in the visitor's browser through Web Crypto. Security news that is relayed automatically
                 is labelled as such and is never marked verified. All of the verification runs client-side, so it can
                 be read in the page source.</p>
               <div class="case-grid">
-                <div class="case-cell lead">
+                <div class="case-cell">
                   <p class="case-label">Problem</p>
                   <p>A static host or CDN can serve modified content without the visitor noticing, so trusting
                     the server is not a sufficient security model.</p>
@@ -318,21 +295,13 @@
           </article>
 
           <article class="case">
-            <h2 class="case-heading">
-              <button type="button" class="case-head" aria-expanded="false">
-                <span class="case-num">02</span>
-                <span class="case-titles">
-                  <span class="case-status">Research · ongoing</span>
-                  <span class="case-title-text">macOS backdoor detection</span>
-                </span>
-                <span class="case-caret">Read now <span class="arr" aria-hidden="true">→</span></span>
-              </button>
-            </h2>
+            <p class="case-status">Research, ongoing</p>
+            <h2 class="case-heading">macOS backdoor detection</h2>
             <div class="case-body">
               <p class="case-summary">An exploration of machine-learning detection using macOS system logs, aimed at
                 identifying backdoor behavior that signature-based tools do not catch.</p>
               <div class="case-grid">
-                <div class="case-cell lead">
+                <div class="case-cell">
                   <p class="case-label">Problem</p>
                   <p>Signature-based antivirus does not detect novel or modified backdoors at all.</p>
                 </div>
@@ -351,21 +320,13 @@
           </article>
 
           <article class="case">
-            <h2 class="case-heading">
-              <button type="button" class="case-head" aria-expanded="false">
-                <span class="case-num">03</span>
-                <span class="case-titles">
-                  <span class="case-status">Internship</span>
-                  <span class="case-title-text">PC repair &amp; OS re-imaging</span>
-                </span>
-                <span class="case-caret">Read now <span class="arr" aria-hidden="true">→</span></span>
-              </button>
-            </h2>
+            <p class="case-status">Internship</p>
+            <h2 class="case-heading">PC repair &amp; OS re-imaging</h2>
             <div class="case-body">
               <p class="case-summary">Diagnosing, repairing and re-imaging donated PCs from start to finish, covering
                 hardware triage, data sanitization and clean operating system deployment.</p>
               <div class="case-grid">
-                <div class="case-cell lead">
+                <div class="case-cell">
                   <p class="case-label">Problem</p>
                   <p>Donated hardware arrives in an unknown and frequently broken condition.</p>
                 </div>
@@ -384,21 +345,13 @@
           </article>
 
           <article class="case">
-            <h2 class="case-heading">
-              <button type="button" class="case-head" aria-expanded="false">
-                <span class="case-num">04</span>
-                <span class="case-titles">
-                  <span class="case-status">Ongoing · Marist</span>
-                  <span class="case-title-text">RA programming</span>
-                </span>
-                <span class="case-caret">Read now <span class="arr" aria-hidden="true">→</span></span>
-              </button>
-            </h2>
+            <p class="case-status">Ongoing, Marist</p>
+            <h2 class="case-heading">RA programming</h2>
             <div class="case-body">
               <p class="case-summary">Organizing and hosting residence-hall events that build connection, cultural
                 awareness and student wellbeing, including programming on security literacy.</p>
               <div class="case-grid">
-                <div class="case-cell lead">
+                <div class="case-cell">
                   <p class="case-label">Problem</p>
                   <p>Security advice tends not to land when it is abstract or delivered as a lecture.</p>
                 </div>
@@ -422,18 +375,20 @@
     <!-- ======================= HOMELAB ======================= -->
     <div class="page" data-page="homelab" role="region" aria-label="Homelab" tabindex="-1">
       <section class="lab-intro">
-        <p class="kicker">Homelab</p>
-        <h1 class="page-title page-title--tight page-title--measure">A lab network built for testing malware safely.
-        </h1>
-        <p class="lab-lede">The network is segmented so that anything executed stays where it was executed. Malware
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">Homelab</p>
+          <h1 class="page-title">A lab network built for testing malware safely.</h1>
+          <p class="page-lede">The network is segmented so that anything executed stays where it was executed. Malware
           runs on an isolated VLAN with no route out, and capture and analysis happen on a separate management
           segment.</p>
-        <div class="lab-note">
-          <span class="lab-note-tag">Draft</span>
-          <span class="lab-note-text">This is a reference topology. The VLAN IDs, subnets and host inventory below are
-            placeholders until the real build sheet is finished.</span>
         </div>
-        <div class="cardrow lab-stats">
+        <div class="piece panel panel--amber lab-note" data-piece="lab-note">
+          <p class="tab">Draft</p>
+          <p>This is a reference topology. The VLAN IDs, subnets and host inventory below are placeholders until the
+            real build sheet is finished.</p>
+        </div>
+        <div class="piece panel lab-stats" data-piece="lab-stats">
+          <p class="tab">At a glance</p>
           <div class="lab-stat">
             <span class="lab-stat-value">3</span><span class="lab-stat-label">Segments</span>
           </div>
@@ -452,91 +407,74 @@
         </div>
       </section>
 
-      <section class="band band--ink" id="topology" aria-label="Topology">
+      <section class="topo-band" id="topology" aria-label="Topology">
         <div class="topo-section">
-          <p class="kicker kicker--mint">Topology</p>
-          <h2 class="topo-h2">The segments and how traffic moves between them.</h2>
-          <div class="topo-frame">
-            <svg viewBox="0 0 1040 470" role="img"
+          <div class="piece panel topo-head" data-piece="topo-head">
+            <p class="tab">Topology</p>
+            <h2 class="canvas-h2">The segments and how traffic moves between them.</h2>
+          </div>
+          <div class="piece panel topo-window" data-piece="topo-map">
+            <p class="tab">Network map</p>
+            <div class="topo-frame" tabindex="0" role="group" aria-label="Topology diagram, scrollable on small screens">
+            <svg class="topo" viewBox="0 0 1040 450" role="img"
               aria-label="Homelab network topology: WAN to firewall, branching to management, services, and an isolated detonation VLAN with no route out">
               <defs>
-                <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+                <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
                   orient="auto-start-reverse">
-                  <path d="M0 0 L10 5 L0 10 z" fill="#6EE7B7"></path>
+                  <path class="t-head" d="M0 0 L10 5 L0 10 z"></path>
+                </marker>
+                <marker id="ar-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                  orient="auto-start-reverse">
+                  <path class="t-head t-head--hot" d="M0 0 L10 5 L0 10 z"></path>
                 </marker>
               </defs>
-              <text x="520" y="26" text-anchor="middle" fill="#7C8791" font-family="IBM Plex Mono, monospace"
-                font-size="12" letter-spacing="1.6">INTERNET</text>
-              <line x1="520" y1="40" x2="520" y2="76" stroke="#7C8791" stroke-width="1.5"></line>
+              <text class="t-caption" x="520" y="26" text-anchor="middle">Internet</text>
+              <path class="t-link" d="M520 38 L520 74" marker-end="url(#ar)"></path>
 
-              <rect x="380" y="76" width="280" height="62" fill="#141C24" stroke="#6EE7B7" stroke-width="1.5"></rect>
-              <text x="520" y="101" text-anchor="middle" fill="#F5F3EF" font-family="Archivo, sans-serif" font-size="16"
-                font-weight="700">Firewall</text>
-              <text x="520" y="122" text-anchor="middle" fill="#6EE7B7" font-family="IBM Plex Mono, monospace"
-                font-size="11" letter-spacing="1.2">DEFAULT DENY · LOGGED BOTH WAYS</text>
+              <rect class="t-node t-node--edge" x="380" y="76" width="280" height="62"></rect>
+              <text class="t-name t-ink" x="520" y="102" text-anchor="middle">Firewall</text>
+              <text class="t-mono t-ink" x="520" y="124" text-anchor="middle">default deny, logged both ways</text>
 
-              <path d="M520 138 L520 168 L190 168 L190 214" fill="none" stroke="#6EE7B7" stroke-width="1.5"
-                marker-end="url(#ar)"></path>
-              <path d="M520 138 L520 214" fill="none" stroke="#6EE7B7" stroke-width="1.5" marker-end="url(#ar)"></path>
-              <path d="M520 138 L520 168 L850 168 L850 206" fill="none" stroke="#5C6670" stroke-width="1.5"
-                stroke-dasharray="5 5"></path>
-              <g stroke="#E8A87C" stroke-width="2.5">
-                <line x1="838" y1="196" x2="862" y2="220"></line>
-                <line x1="862" y1="196" x2="838" y2="220"></line>
+              <path class="t-link" d="M450 138 C450 180 190 160 190 212" marker-end="url(#ar)"></path>
+              <path class="t-link" d="M520 138 L520 212" marker-end="url(#ar)"></path>
+              <path class="t-link t-link--cut" d="M590 138 C590 180 850 150 850 194"></path>
+              <g class="t-cross">
+                <line x1="838" y1="194" x2="862" y2="218"></line>
+                <line x1="862" y1="194" x2="838" y2="218"></line>
               </g>
-              <text x="878" y="212" fill="#E8A87C" font-family="IBM Plex Mono, monospace" font-size="11"
-                letter-spacing="1.1">NO ROUTE OUT</text>
+              <text class="t-mono t-hot" x="874" y="210">no route out</text>
 
-              <rect x="60" y="214" width="260" height="112" fill="#10161C" stroke="rgba(245,243,239,.28)"
-                stroke-width="1"></rect>
-              <text x="80" y="240" fill="#6EE7B7" font-family="IBM Plex Mono, monospace" font-size="10.5"
-                letter-spacing="1.5">VLAN 10 · MANAGEMENT</text>
-              <text x="80" y="266" fill="#F5F3EF" font-family="Archivo, sans-serif" font-size="15"
-                font-weight="700">Analysis workstation</text>
-              <text x="80" y="288" fill="#A9B4BE" font-family="IBM Plex Sans, sans-serif" font-size="13">Wireshark ·
-                notes · git</text>
-              <text x="80" y="311" fill="#7C8791" font-family="IBM Plex Mono, monospace"
-                font-size="11">10.10.10.0/24</text>
+              <rect class="t-node" x="60" y="214" width="260" height="112"></rect>
+              <text class="t-mono t-accent" x="80" y="240">VLAN 10, management</text>
+              <text class="t-name t-ink" x="80" y="266">Analysis workstation</text>
+              <text class="t-body t-ink" x="80" y="288">Wireshark, notes, git</text>
+              <text class="t-mono t-dim" x="80" y="311">10.10.10.0/24</text>
 
-              <rect x="390" y="214" width="260" height="112" fill="#10161C" stroke="rgba(245,243,239,.28)"
-                stroke-width="1"></rect>
-              <text x="410" y="240" fill="#6EE7B7" font-family="IBM Plex Mono, monospace" font-size="10.5"
-                letter-spacing="1.5">VLAN 20 · SERVICES</text>
-              <text x="410" y="266" fill="#F5F3EF" font-family="Archivo, sans-serif" font-size="15"
-                font-weight="700">Hypervisor host</text>
-              <text x="410" y="288" fill="#A9B4BE" font-family="IBM Plex Sans, sans-serif" font-size="13">VirtualBox ·
-                file / backup</text>
-              <text x="410" y="311" fill="#7C8791" font-family="IBM Plex Mono, monospace"
-                font-size="11">10.10.20.0/24</text>
+              <rect class="t-node" x="390" y="214" width="260" height="112"></rect>
+              <text class="t-mono t-accent" x="410" y="240">VLAN 20, services</text>
+              <text class="t-name t-ink" x="410" y="266">Hypervisor host</text>
+              <text class="t-body t-ink" x="410" y="288">VirtualBox, file / backup</text>
+              <text class="t-mono t-dim" x="410" y="311">10.10.20.0/24</text>
 
-              <rect x="720" y="214" width="260" height="112" fill="#1A1113" stroke="#E8A87C" stroke-width="1.5"></rect>
-              <text x="740" y="240" fill="#E8A87C" font-family="IBM Plex Mono, monospace" font-size="10.5"
-                letter-spacing="1.5">VLAN 66 · DETONATION</text>
-              <text x="740" y="266" fill="#F5F3EF" font-family="Archivo, sans-serif" font-size="15"
-                font-weight="700">Kali
-                + target VMs</text>
-              <text x="740" y="288" fill="#A9B4BE" font-family="IBM Plex Sans, sans-serif" font-size="13">Metasploit ·
-                snapshot revert</text>
-              <text x="740" y="311" fill="#7C8791" font-family="IBM Plex Mono, monospace"
-                font-size="11">10.10.66.0/24</text>
+              <rect class="t-node t-node--hot" x="720" y="214" width="260" height="112"></rect>
+              <text class="t-mono t-ink" x="740" y="240">VLAN 66, detonation</text>
+              <text class="t-name t-ink" x="740" y="266">Kali + target VMs</text>
+              <text class="t-body t-ink" x="740" y="288">Metasploit, snapshot revert</text>
+              <text class="t-mono t-ink" x="740" y="311">10.10.66.0/24</text>
 
-              <path d="M850 326 L850 372 L190 372 L190 340" fill="none" stroke="#E8A87C" stroke-width="1.5"
-                stroke-dasharray="3 4" marker-end="url(#ar)"></path>
-              <rect x="430" y="352" width="180" height="40" fill="#10161C" stroke="#E8A87C" stroke-width="1"></rect>
-              <text x="520" y="377" text-anchor="middle" fill="#E8A87C" font-family="IBM Plex Mono, monospace"
-                font-size="11" letter-spacing="1.1">ONE-WAY TAP</text>
-              <text x="520" y="424" text-anchor="middle" fill="#7C8791" font-family="IBM Plex Sans, sans-serif"
-                font-size="13.5">Captures leave the detonation VLAN through a tap, and nothing routes back into
-                it.</text>
-              <line x1="60" y1="448" x2="980" y2="448" stroke="rgba(245,243,239,.16)" stroke-width="1"></line>
+              <path class="t-link t-link--tap" d="M850 326 C850 390 190 400 190 330" marker-end="url(#ar-hot)"></path>
+              <rect class="t-node t-node--hot" x="430" y="352" width="180" height="40"></rect>
+              <text class="t-mono t-ink" x="520" y="377" text-anchor="middle">one-way tap</text>
+              <text class="t-body t-on" x="520" y="430" text-anchor="middle">Captures leave the detonation VLAN through a tap, and nothing routes back into it.</text>
             </svg>
+            </div>
           </div>
           <div class="zones" id="lab-zones">
-            <div class="zone zone--edge">
+            <div class="piece panel zone zone--edge" data-piece="z-edge">
+              <p class="tab">Edge</p>
               <div class="zone-rail">
-                <span class="zone-tag">Edge</span>
                 <span class="zone-name">Perimeter</span>
-                <span class="zone-cidr">WAN → firewall</span>
+                <span class="zone-cidr">WAN to firewall</span>
                 <span class="zone-egress">policy enforced</span>
               </div>
               <div class="zone-main">
@@ -546,9 +484,9 @@
                     logging</span></div>
               </div>
             </div>
-            <div class="zone">
+            <div class="piece panel zone" data-piece="z-10">
+              <p class="tab">VLAN 10</p>
               <div class="zone-rail">
-                <span class="zone-tag">VLAN 10</span>
                 <span class="zone-name">Management</span>
                 <span class="zone-cidr">10.10.10.0/24</span>
                 <span class="zone-egress">outbound allowed</span>
@@ -560,9 +498,9 @@
                     notes</span></div>
               </div>
             </div>
-            <div class="zone">
+            <div class="piece panel zone" data-piece="z-20">
+              <p class="tab">VLAN 20</p>
               <div class="zone-rail">
-                <span class="zone-tag">VLAN 20</span>
                 <span class="zone-name">Services</span>
                 <span class="zone-cidr">10.10.20.0/24</span>
                 <span class="zone-egress">restricted</span>
@@ -574,9 +512,9 @@
                     services</span></div>
               </div>
             </div>
-            <div class="zone zone--hot">
+            <div class="piece panel zone zone--hot" data-piece="z-66">
+              <p class="tab">VLAN 66</p>
               <div class="zone-rail">
-                <span class="zone-tag">VLAN 66</span>
                 <span class="zone-name">Detonation</span>
                 <span class="zone-cidr">10.10.66.0/24</span>
                 <span class="zone-egress">no default route</span>
@@ -589,14 +527,17 @@
               </div>
             </div>
           </div>
-          <p class="topo-foot">Traffic between segments passes through the firewall only. The detonation VLAN has no
+          <div class="piece panel topo-foot" data-piece="topo-foot">
+            <p class="tab">Routing note</p>
+            <p>Traffic between segments passes through the firewall only. The detonation VLAN has no
             default route, so analysis pulls captures from the tap rather than connecting into the VLAN.</p>
+          </div>
         </div>
       </section>
 
       <section class="lab-detail">
-        <div>
-          <p class="lab-col-label" id="lab-hardware">Hardware &amp; hosts</p>
+        <div class="piece panel" data-piece="lab-hw" id="lab-hardware">
+          <p class="tab">Hardware &amp; hosts</p>
           <div class="hw-row">
             <span class="hw-main"><span class="hw-name">Hypervisor host</span><span class="hw-role">VirtualBox host
                 running the attacker/target pairs</span></span>
@@ -623,8 +564,8 @@
             <span class="hw-zone">Edge</span>
           </div>
         </div>
-        <div>
-          <p class="lab-col-label" id="lab-uses">What I run it for</p>
+        <div class="piece panel" data-piece="lab-uses" id="lab-uses">
+          <p class="tab">What I run it for</p>
           <div class="use-row">
             <span class="use-title">Malware behavior analysis</span>
             <span class="use-body">Running a sample on an isolated target and recording what it changes on disk, in
@@ -652,19 +593,25 @@
     <!-- ======================= FEED ======================= -->
     <div class="page" data-page="feed" role="region" aria-label="WaelSocial signed feed" tabindex="-1">
       <section class="page-shell">
-        <p class="kicker">Signed entries, verified in the browser</p>
-        <h1 class="page-title">WaelSocial</h1>
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">Signed entries, verified in the browser</p>
+          <h1 class="page-title">WaelSocial</h1>
+        </div>
         <div class="feed-layout">
           <aside class="feed-side">
-            <p class="feed-blurb">Verified entries are checked in your own browser, using Ed25519 through Web Crypto
+            <div class="piece panel feed-blurb" data-piece="feed-blurb">
+              <p class="tab">How it works</p>
+              <p>Verified entries are checked in your own browser, using Ed25519 through Web Crypto
               against a public key pinned in the page. Security news pulled in automatically is labelled as such and
               is never marked verified.</p>
-            <div class="key-card" id="signing-key">
-              <p class="key-label">Pinned signing key</p>
+            </div>
+            <div class="piece panel panel--ember key-card" id="signing-key" data-piece="feed-key">
+              <p class="tab key-label">Pinned signing key</p>
               <p class="key-value">/XKGM2r0/oyl47HkuhDK8JiH5pUJvPlRi8btV03S/mE=</p>
             </div>
           </aside>
-          <div class="feed-main">
+          <div class="piece panel feed-main" data-piece="feed-main">
+            <p class="tab">Entries</p>
             <div class="ws-filters" role="group" aria-label="Filter feed">
               <button type="button" class="ws-pill" data-ws-filter="all" aria-pressed="false">All</button>
               <button type="button" class="ws-pill on" data-ws-filter="mine" aria-pressed="true">My work</button>
@@ -682,11 +629,13 @@
     <!-- ======================= WRITING ======================= -->
     <div class="page" data-page="writing" role="region" aria-label="Writing" tabindex="-1">
       <section class="page-shell">
-        <p class="kicker">Notes &amp; writeups</p>
-        <h1 class="page-title">Writing</h1>
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">Notes &amp; writeups</p>
+          <h1 class="page-title">Writing</h1>
+        </div>
         <div class="writing-list">
-          <div class="writing-row" id="writing-keypinning">
-            <span class="writing-tag">Cryptography · draft</span>
+          <div class="piece panel writing-row" id="writing-keypinning" data-piece="wr-key">
+            <span class="tab writing-tag">Cryptography, draft</span>
             <span class="writing-main">
               <span class="writing-title">Pinning a public key in a static-site feed</span>
               <span class="writing-blurb">Why the checkmark indicates authorship by one specific key, rather than
@@ -694,8 +643,8 @@
             </span>
             <span class="writing-cta">In progress</span>
           </div>
-          <div class="writing-row" id="writing-macoslogs">
-            <span class="writing-tag">Detection · draft</span>
+          <div class="piece panel writing-row" id="writing-macoslogs" data-piece="wr-mac">
+            <span class="tab writing-tag">Detection, draft</span>
             <span class="writing-main">
               <span class="writing-title">Reading macOS logs for detection, not forensics</span>
               <span class="writing-blurb">Notes from training models on unified log streams to identify behavior
@@ -710,10 +659,13 @@
     <!-- ======================= ABOUT ======================= -->
     <div class="page" data-page="about" role="region" aria-label="About" tabindex="-1">
       <section class="page-shell">
-        <p class="kicker">About</p>
-        <h1 class="about-title">Security involves both the technology and the people using it.</h1>
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">About</p>
+          <h1 class="page-title">Security involves both the technology and the people using it.</h1>
+        </div>
         <div class="about-layout">
-          <div class="about-prose" id="about-background">
+          <div class="piece panel about-prose" id="about-background" data-piece="ab-bio">
+            <p class="tab">Background</p>
             <p>I am a senior at Marist University, studying for a B.S. in Cybersecurity with minors in Computer
               Science, Information Systems, Information Technology and Criminal Justice. My hands-on work covers
               malware analysis, network traffic and building secure lab environments.</p>
@@ -721,8 +673,8 @@
               Controls that people do not understand tend not to be followed.</p>
           </div>
           <div class="about-side">
-            <div>
-              <h2 class="side-label" id="about-skills">Skills</h2>
+            <div class="piece panel panel--split about-skills" data-piece="ab-skills" id="about-skills">
+              <h2 class="tab side-label">Skills</h2>
               <div class="skill-row"><span class="skill-key">Analysis</span><span>Wireshark, Kali Linux and
                   Metasploit</span></div>
               <div class="skill-row"><span class="skill-key">Build</span><span>Python, Git, and Web Crypto with
@@ -730,15 +682,14 @@
               <div class="skill-row"><span class="skill-key">Lab</span><span>VirtualBox, isolated networks and OS
                   imaging</span></div>
             </div>
-            <div class="lab-card" id="about-lab">
-              <h2 class="side-label">Lab setup</h2>
+            <div class="piece panel lab-card" id="about-lab" data-piece="ab-lab">
+              <h2 class="tab side-label">Lab setup</h2>
               <div class="lab-rows">
                 <span>VirtualBox, running isolated attacker and target VMs</span>
                 <span>Kali and Metasploit for offensive testing</span>
                 <span>Wireshark captures taken on lab-only networks</span>
               </div>
-              <p class="lab-card-more"><a href="#/homelab">See the full topology <span class="arr"
-                    aria-hidden="true">→</span></a></p>
+              <p class="lab-card-more"><a href="#/homelab">See the full topology</a></p>
             </div>
           </div>
         </div>
@@ -747,36 +698,32 @@
 
     <!-- ======================= CONTACT ======================= -->
     <div class="page" data-page="contact" role="region" aria-label="Contact" tabindex="-1">
-      <div class="contact-head">
-        <p class="kicker">Contact</p>
-        <h1 class="contact-title">Get in touch.</h1>
-      </div>
-      <div class="band band--ink">
-        <div class="contact-band-inner">
+      <section class="page-shell">
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">Contact</p>
+          <h1 class="page-title">Get in touch.</h1>
+        </div>
           <div class="contact-grid">
-            <a class="contact-card" href="mailto:wael@wael.sh">
-              <span class="contact-label">Email</span>
+            <a class="piece panel panel--sig contact-card" data-piece="ct-mail" href="mailto:wael@wael.sh">
+              <span class="tab contact-label">Email</span>
               <span class="contact-value">wael@wael.sh</span>
-              <span class="contact-arr" aria-hidden="true">→</span>
             </a>
-            <a class="contact-card" href="https://github.com/CyberGlitching" target="_blank" rel="noopener">
-              <span class="contact-label">GitHub</span>
+            <a class="piece panel panel--ember contact-card" data-piece="ct-gh" href="https://github.com/CyberGlitching" target="_blank" rel="noopener">
+              <span class="tab contact-label">GitHub</span>
               <span class="contact-value">CyberGlitching</span>
               <span class="contact-arr" aria-hidden="true">↗</span>
             </a>
-            <a class="contact-card" href="https://www.linkedin.com/in/wael-shahadeh/" target="_blank" rel="noopener">
-              <span class="contact-label">LinkedIn</span>
+            <a class="piece panel panel--split contact-card" data-piece="ct-li" href="https://www.linkedin.com/in/wael-shahadeh/" target="_blank" rel="noopener">
+              <span class="tab contact-label">LinkedIn</span>
               <span class="contact-value">wael-shahadeh</span>
               <span class="contact-arr" aria-hidden="true">↗</span>
             </a>
-            <a class="contact-card" href="resume/">
-              <span class="contact-label">Resume</span>
+            <a class="piece panel panel--amber contact-card" data-piece="ct-cv" href="resume/">
+              <span class="tab contact-label">Resume</span>
               <span class="contact-value">Open the PDF</span>
-              <span class="contact-arr" aria-hidden="true">→</span>
             </a>
           </div>
-        </div>
-      </div>
+      </section>
     </div>
 
     <!-- ======================= PRIVACY ======================= -->
@@ -784,13 +731,16 @@
          the stack changes, this page should be updated in the same commit. -->
     <div class="page" data-page="privacy" role="region" aria-label="Privacy" tabindex="-1">
       <section class="page-shell">
-        <p class="kicker">Privacy</p>
-        <h1 class="page-title page-title--tight">What this site collects.</h1>
-        <p class="page-lede">The short answer is that it collects nothing. The detail below is written against
-          the actual code rather than from a template, so you can read the source and check each claim for
-          yourself.</p>
+        <div class="piece panel page-head" data-piece="head">
+          <p class="tab">Privacy</p>
+          <h1 class="page-title">What this site collects.</h1>
+          <p class="page-lede">The short answer is that it collects nothing. The detail below is written against
+            the actual code rather than from a template, so you can read the source and check each claim for
+            yourself.</p>
+        </div>
 
-        <div class="privacy-list">
+        <div class="piece panel privacy-list" data-piece="priv-list">
+          <p class="tab">Data policy</p>
           <div class="privacy-row">
             <span class="privacy-key">Cookies</span>
             <div class="privacy-val">
@@ -891,7 +841,6 @@
       <p class="tagline">Personal site, updated as projects progress.</p>
       <nav class="footer-links" aria-label="Footer">
         <a href="#/privacy">Privacy</a>
-        <span class="arr" aria-hidden="true">↗</span></a>
       </nav>
       <button type="button" class="btn-quiet" id="toTop">Top <span class="arr" aria-hidden="true">↑</span></button>
     </div>
@@ -900,7 +849,7 @@
   <div id="palette" class="palette-overlay" hidden>
     <div class="palette-panel" role="dialog" aria-modal="true" aria-label="Command palette">
       <div class="palette-head">
-        <span class="palette-prompt">→</span>
+        <span class="palette-prompt">↳</span>
         <input id="paletteInput" placeholder="Jump to…" spellcheck="false" aria-label="Search commands" />
         <span class="palette-esc">ESC</span>
       </div>
@@ -908,8 +857,9 @@
     </div>
   </div>
 
-  <script src="script.js?v=v8"></script>
-  <script src="waelsocial.js?v=v8"></script>
+  <script src="agents.js?v=v12"></script>
+  <script src="script.js?v=v12"></script>
+  <script src="waelsocial.js?v=v12"></script>
 </body>
 
 </html>

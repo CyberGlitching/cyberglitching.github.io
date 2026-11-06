@@ -11,7 +11,8 @@
 .nf-title{
   margin: 0 0 20px; font-family: var(--display);
   font-size: clamp(40px, 6vw, 76px); line-height: 1;
-  font-weight: 900; letter-spacing: -2.6px; max-width: 14ch;
+  font-weight: 900; font-stretch: 84%; text-transform: uppercase; max-width: 14ch;
+  text-shadow: -3px 0 var(--split), 3px 0 var(--sig);
 }
 .nf-lede{
   margin: 0 0 44px; font-size: 18.5px; line-height: 1.65;
@@ -27,11 +28,13 @@
   display: flex; align-items: center; gap: 10px;
   padding: 20px 4px; border-bottom: 1px solid var(--dline);
   font-family: var(--display); font-size: 16px; font-weight: 600;
-  color: var(--on-ink); transition: padding .15s, color .15s;
+  color: var(--on-ink); text-decoration: none; transition: padding .15s, color .15s;
 }
 .nf-links a:hover{ color: var(--mint); padding-left: 12px; }
-.nf-links .arr{ font-family: var(--mono); color: var(--mint); font-size: 13px; }
+.nf-links .arr{ color: var(--mint); }
 
 @media (prefers-reduced-motion: reduce){
   .nf-links a{ transition: none; }
 }
+
+.nf-code{ margin-bottom: 12px; color: var(--cy); font-family: var(--mono); font-size: 14px; }

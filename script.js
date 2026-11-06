@@ -74,8 +74,7 @@ function showPage(page) {
     on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current");
   });
   applyMeta(page);
-  page === "home" ? startNet() : stopNet();
-  sweepReveals();
+  window.Swarm.enter(page);
 }
 
 // After a route change, keyboard and screen-reader users would otherwise be
@@ -355,177 +354,6 @@ if (navEl) {
 }
 
 /* ============================================================
-   Hero background: a node and edge network with pulses that propagate across it
-   ============================================================ */
-const netCanvas = document.getElementById("netCanvas");
-let netRaf = null;
-let netResize = null;
-// Under prefers-reduced-motion the loop paints one frame and stops, which
-// leaves netRaf null. Guarding re-entry on netRaf alone therefore allowed every
-// later return to the home page to start a second scene, rebuilding the graph
-// and adding another resize listener that stopNet() could not remove.
-// netRunning records whether a scene is currently mounted.
-let netRunning = false;
-
-function stopNet() {
-  if (netRaf) cancelAnimationFrame(netRaf);
-  netRaf = null;
-  if (netResize) window.removeEventListener("resize", netResize);
-  netResize = null;
-  netRunning = false;
-}
-
-function startNet() {
-  if (!netCanvas || netRunning) return;
-  const ctx = netCanvas.getContext("2d");
-  if (!ctx) return;                 // claim the flag only once we can paint
-  netRunning = true;
-
-  const LINE = "58,68,78", DOT = "120,132,143", ACC = "110,231,183";
-  let W = 0, H = 0, nodes = [], edges = [], pulses = [], nextPulse = 1.2;
-  const g = () => (Math.random() + Math.random() + Math.random()) / 3;
-
-  const build = () => {
-    const r = netCanvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = Math.max(1, r.width); H = Math.max(1, r.height);
-    netCanvas.width = Math.round(W * dpr);
-    netCanvas.height = Math.round(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.max(34, Math.min(96, Math.round(W * H / 15000)));
-    nodes = [];
-    for (let i = 0; i < n; i++) {
-      const bx = Math.min(1, Math.max(0, 0.66 + (g() - 0.5) * 0.9));
-      const by = Math.min(1, Math.max(0, 0.5 + (g() - 0.5) * 1.25));
-      nodes.push({
-        bx: bx * W, by: by * H, x: bx * W, y: by * H,
-        ph: Math.random() * 6.28, sp: 0.12 + Math.random() * 0.22, amp: 2 + Math.random() * 4,
-        r: 1.2 + Math.random() * 1.1, glow: 0,
-      });
-    }
-    edges = [];
-    const seen = new Set();
-    nodes.forEach((a, i) => {
-      const near = nodes
-        .map((b, j) => ({ j, d: (b.x - a.x) ** 2 + (b.y - a.y) ** 2 }))
-        .filter((o) => o.j !== i)
-        .sort((p, q) => p.d - q.d)
-        .slice(0, 2 + (Math.random() < 0.35 ? 1 : 0));
-      near.forEach((o) => {
-        const k = i < o.j ? i + ":" + o.j : o.j + ":" + i;
-        if (seen.has(k)) return;
-        seen.add(k);
-        edges.push([i, o.j]);
-      });
-    });
-  };
-
-  build();
-  netResize = () => build();
-  window.addEventListener("resize", netResize);
-
-  const t0 = performance.now();
-  const frame = (now) => {
-    const t = (now - t0) / 1000;
-    if (!REDUCED) {
-      for (const nd of nodes) {
-        nd.x = nd.bx + Math.sin(t * nd.sp * 1.7 + nd.ph) * nd.amp;
-        nd.y = nd.by + Math.cos(t * nd.sp * 1.3 + nd.ph * 1.7) * nd.amp * 0.8;
-        nd.glow *= 0.94;
-      }
-      if (t > nextPulse) {
-        const o = nodes[Math.floor(Math.random() * nodes.length)];
-        if (o) pulses.push({ x: o.x, y: o.y, t: 0 });
-        nextPulse = t + 2.4 + Math.random() * 2.6;
-      }
-      const span = Math.hypot(W, H);
-      pulses = pulses.filter((p) => { p.t += 1 / 60; return p.t * 560 < span * 1.15; });
-    }
-
-    ctx.clearRect(0, 0, W, H);
-    const band = 110;
-    const waveAt = (x, y) => {
-      let v = 0;
-      for (const p of pulses) {
-        const d = Math.abs(Math.hypot(x - p.x, y - p.y) - p.t * 560);
-        if (d < band) v = Math.max(v, (1 - d / band) * Math.max(0, 1 - p.t / 2.4));
-      }
-      return v;
-    };
-
-    ctx.lineWidth = 0.8;
-    for (const [i, j] of edges) {
-      const a = nodes[i], b = nodes[j];
-      const v = waveAt((a.x + b.x) / 2, (a.y + b.y) / 2);
-      ctx.strokeStyle = v > 0.02
-        ? "rgba(" + ACC + "," + (0.1 + v * 0.75).toFixed(3) + ")"
-        : "rgba(" + LINE + ",0.55)";
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    }
-    for (const nd of nodes) {
-      const v = Math.max(nd.glow, waveAt(nd.x, nd.y));
-      if (v > nd.glow) nd.glow = v;
-      ctx.beginPath();
-      ctx.arc(nd.x, nd.y, nd.r + nd.glow * 1.7, 0, 6.2832);
-      if (nd.glow > 0.03) {
-        ctx.fillStyle = "rgba(" + ACC + "," + (0.35 + nd.glow * 0.65).toFixed(3) + ")";
-        ctx.shadowColor = "rgba(" + ACC + ",0.6)";
-        ctx.shadowBlur = 10 * nd.glow;
-      } else {
-        ctx.fillStyle = "rgba(" + DOT + ",0.78)";
-        ctx.shadowBlur = 0;
-      }
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-    if (!REDUCED) netRaf = requestAnimationFrame(frame);
-    else netRaf = null;
-  };
-  netRaf = requestAnimationFrame(frame);
-}
-
-/* ============================================================
-   Scroll reveals. These are only armed once JavaScript is running, so a
-   visitor without JavaScript does not get a page of invisible sections.
-   ============================================================ */
-const revealed = new WeakSet();
-let revealObserver = null;
-
-function armReveals() {
-  requestAnimationFrame(() => {
-    let i = 0;
-    document.querySelectorAll("[data-reveal]").forEach((el) => {
-      if (revealed.has(el)) return;
-      revealed.add(el);
-      el.setAttribute("data-armed", "1");
-      el.style.transitionDelay = (i++ % 4) * 70 + "ms";
-      if (revealObserver) revealObserver.observe(el);
-    });
-    sweepReveals();
-  });
-}
-
-function sweepReveals() {
-  const vh = window.innerHeight || 800;
-  document.querySelectorAll("[data-reveal][data-armed]:not(.is-in)").forEach((el) => {
-    const r = el.getBoundingClientRect();
-    if (r.height > 0 && r.top < vh * 0.94 && r.bottom > 0) el.classList.add("is-in");
-  });
-}
-
-if ("IntersectionObserver" in window) {
-  revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting) {
-        e.target.classList.add("is-in");
-        revealObserver.unobserve(e.target);
-      }
-    });
-  }, { rootMargin: "0px 0px -6% 0px" });
-}
-armReveals();
-
-/* ============================================================
    Featured card. This shows real signed entries and verifies them, and falls
    back to an "unavailable" state rather than displaying a checkmark it has
    not actually checked.
@@ -722,35 +550,62 @@ if (termBody && termInput) {
 }
 
 /* ============================================================
-   Case study accordion
+   Case study tabs
+
+   The tab strip is built here rather than written into the page, so a visitor
+   without JavaScript gets all four case studies stacked and readable instead
+   of a row of buttons that do nothing.
    ============================================================ */
+const caseItems = [...document.querySelectorAll(".case")];
+const caseTabs = [];
+
 function setCase(item, open, opts = {}) {
-  if (opts.exclusive) {
-    document.querySelectorAll(".case").forEach((c) => { if (c !== item) setCase(c, false); });
-  }
+  if (opts.exclusive) caseItems.forEach((c) => { if (c !== item) c.classList.remove("open"); });
   item.classList.toggle("open", open);
-  const head = item.querySelector(".case-head");
-  head.setAttribute("aria-expanded", String(open));
-  const caret = item.querySelector(".case-caret");
-  caret.replaceChildren();
-  const arr = document.createElement("span");
-  arr.className = "arr";
-  arr.setAttribute("aria-hidden", "true");
-  arr.textContent = open ? "↑" : "→";
-  caret.append(open ? "Close " : "Read now ", arr);
+  caseTabs.forEach((tab, i) => {
+    const on = caseItems[i].classList.contains("open");
+    tab.setAttribute("aria-selected", String(on));
+    tab.tabIndex = on ? 0 : -1;
+  });
   if (open && opts.scroll) {
-    item.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+    item.closest(".case-list").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" });
   }
 }
 
-document.querySelectorAll(".case-head").forEach((head) => {
-  head.addEventListener("click", () => {
-    const item = head.closest(".case");
-    const wasOpen = item.classList.contains("open");
-    document.querySelectorAll(".case").forEach((c) => setCase(c, false));
-    if (!wasOpen) setCase(item, true);
+const caseList = document.querySelector(".case-list");
+if (caseList && caseItems.length) {
+  const strip = document.createElement("div");
+  strip.className = "case-tabs";
+  strip.setAttribute("role", "tablist");
+  strip.setAttribute("aria-label", "Case studies");
+  caseItems.forEach((item, i) => {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "case-tab";
+    tab.id = "case-tab-" + i;
+    tab.textContent = item.querySelector(".case-heading").textContent.replace(/,.*$/, "");
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-controls", "case-panel-" + i);
+    tab.addEventListener("click", () => setCase(item, true, { exclusive: true }));
+    // Arrow keys move between tabs, which is what a tablist promises.
+    tab.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const n = (i + step + caseItems.length) % caseItems.length;
+      setCase(caseItems[n], true, { exclusive: true });
+      caseTabs[n].focus();
+    });
+    item.id = "case-panel-" + i;
+    item.setAttribute("role", "tabpanel");
+    item.setAttribute("aria-labelledby", tab.id);
+    caseTabs.push(tab);
+    strip.append(tab);
   });
-});
+  caseItems[0].before(strip);
+  caseList.classList.add("has-tabs");
+  setCase(caseItems[0], true, { exclusive: true });
+}
 
 /* ============================================================
    Command palette

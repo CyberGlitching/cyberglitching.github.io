@@ -1,7 +1,7 @@
 /* Resume viewer, a shell around the PDF. It inherits its tokens from /style.css. */
 
 .resume-body{
-  background: var(--panel);
+  background: var(--void);
   color: var(--on-ink);
   min-height: 100vh;
   display: flex;
@@ -17,25 +17,23 @@
 .resume-back{
   display: inline-flex; align-items: center; gap: 9px;
   font-family: var(--display); font-weight: 700; font-size: 14px;
-  color: var(--mint);
+  color: var(--mint); text-decoration: none;
 }
 .resume-back:hover{ color: var(--on-ink); }
-.resume-back .arr{ font-family: var(--mono); }
 .resume-title{
   margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600;
   letter-spacing: -.2px; color: var(--on-ink-body);
 }
 .resume-actions{ margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
 .resume-actions .btn-quiet{
-  color: var(--on-ink); border-color: rgba(245,243,239,.28);
+  color: var(--on-ink);
 }
 .resume-actions .btn-quiet:hover{ border-color: var(--mint); color: var(--mint); }
-.resume-actions .arr{ font-family: var(--mono); }
 
 .resume-main{ flex: 1; display: flex; flex-direction: column; }
 .resume-frame{
   flex: 1; width: 100%; min-height: 70vh;
-  border: 0; background: var(--panel);
+  border: 0; background: var(--void);
   display: block;
 }
 .resume-note{

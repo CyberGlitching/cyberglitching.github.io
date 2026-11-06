@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="wael.sh">
-  <rect width="64" height="64" rx="10" fill="#0B0F14"/>
-  <!-- the checkmark the feed earns by verifying, not by asserting -->
-  <path d="M17 33.5 L27.5 44 L47 20" fill="none" stroke="#6EE7B7" stroke-width="7"
-        stroke-linecap="square" stroke-linejoin="miter"/>
+  <rect width="64" height="64" fill="#0B0305"/>
+  <!-- one of the agents' cursors, split the way the headline is -->
+  <path d="M12 8 L12 50 L23.2 39.2 L31.2 56.8 L40 52.8 L32 35.6 L47.6 34.8 Z" fill="#00F0FF"/>
+  <path d="M18 8 L18 50 L29.2 39.2 L37.2 56.8 L46 52.8 L38 35.6 L53.6 34.8 Z" fill="#FF2340"/>
+  <path d="M15 8 L15 50 L26.2 39.2 L34.2 56.8 L43 52.8 L35 35.6 L50.6 34.8 Z" fill="#FFFFFF"/>
 </svg>
